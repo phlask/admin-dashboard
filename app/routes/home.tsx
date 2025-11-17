@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import Welcome from "../welcome/welcome";
 import { getResources } from "~/utils/supabase";
 
 export function meta({}: Route.MetaArgs) {
