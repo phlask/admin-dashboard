@@ -10,7 +10,7 @@
  */
 export interface DataSource {
   /** The type of data source */
-  type: 'MANUAL' | 'WEB_SCRAPE';
+  type: "MANUAL" | "WEB_SCRAPE";
   /** If available, the URL where this data came from */
   url?: string;
 }
@@ -59,10 +59,16 @@ export interface GooglePlacesPeriod {
 export interface WaterInfo {
   /** The type of water dispenser. Can be empty. */
   dispenser_type: Array<
-    'DRINKING_FOUNTAIN' | 'BOTTLE_FILLER' | 'SINK' | 'JUG' | 'SODA_MACHINE' | 'PITCHER' | 'WATER_COOLER'
+    | "DRINKING_FOUNTAIN"
+    | "BOTTLE_FILLER"
+    | "SINK"
+    | "JUG"
+    | "SODA_MACHINE"
+    | "PITCHER"
+    | "WATER_COOLER"
   >;
   /** A list of additional tags regarding this water resource. Can be empty. */
-  tags: Array<'WHEELCHAIR_ACCESSIBLE' | 'FILTERED' | 'BYOB' | 'ID_REQUIRED'>;
+  tags: Array<"WHEELCHAIR_ACCESSIBLE" | "FILTERED" | "BYOB" | "ID_REQUIRED">;
 }
 
 /**
@@ -70,11 +76,11 @@ export interface WaterInfo {
  */
 export interface FoodInfo {
   /** The types of food included in this resource. Must have at least one entry. */
-  food_type: Array<'PERISHABLE' | 'NON_PERISHABLE' | 'PREPARED'>;
+  food_type: Array<"PERISHABLE" | "NON_PERISHABLE" | "PREPARED">;
   /** The permitted ways to access the food. Must have at least one entry. */
-  distribution_type: Array<'EAT_ON_SITE' | 'DELIVERY' | 'PICKUP'>;
+  distribution_type: Array<"EAT_ON_SITE" | "DELIVERY" | "PICKUP">;
   /** The type of organization providing this food. Must have at least one entry. */
-  organization_type: Array<'GOVERNMENT' | 'BUSINESS' | 'NON_PROFIT' | 'UNSURE'>;
+  organization_type: Array<"GOVERNMENT" | "BUSINESS" | "NON_PROFIT" | "UNSURE">;
   /** If available, the name of the organization providing the resource */
   organization_name?: string;
   /** If available, a URL to more information about this food resource */
@@ -86,9 +92,9 @@ export interface FoodInfo {
  */
 export interface ForageInfo {
   /** The type of foraging resources this location contains. Must have at least one entry. */
-  forage_type: Array<'NUT' | 'FRUIT' | 'LEAVES' | 'BARK' | 'FLOWERS'>;
+  forage_type: Array<"NUT" | "FRUIT" | "LEAVES" | "BARK" | "FLOWERS">;
   /** A list of additional tags regarding this foraging resource. Can be empty. */
-  tags: Array<'MEDICINAL' | 'IN_SEASON' | 'COMMUNITY_GARDEN'>;
+  tags: Array<"MEDICINAL" | "IN_SEASON" | "COMMUNITY_GARDEN">;
 }
 
 /**
@@ -97,7 +103,11 @@ export interface ForageInfo {
 export interface BathroomInfo {
   /** A list of additional tags regarding this bathroom resource. Can be empty. */
   tags: Array<
-    'WHEELCHAIR_ACCESSIBLE' | 'GENDER_NEUTRAL' | 'CHANGING_TABLE' | 'SINGLE_OCCUPANCY' | 'FAMILY'
+    | "WHEELCHAIR_ACCESSIBLE"
+    | "GENDER_NEUTRAL"
+    | "CHANGING_TABLE"
+    | "SINGLE_OCCUPANCY"
+    | "FAMILY"
   >;
 }
 
@@ -121,7 +131,7 @@ export interface ResourceEntry {
   /** The verification details of this resource */
   verification: Verification;
   /** The type of resource */
-  resource_type: 'WATER' | 'FOOD' | 'FORAGE' | 'BATHROOM';
+  resource_type: "WATER" | "FOOD" | "FORAGE" | "BATHROOM";
   /** The street address of the resource (not including city, state, or zip). May include the secondary address. */
   address?: string | null;
   /** The city of the resource */
@@ -145,9 +155,13 @@ export interface ResourceEntry {
   /** A non-address name for this location, such as the business name or park name */
   name?: string | null;
   /** The current status of this resource */
-  status: 'OPERATIONAL' | 'TEMPORARILY_CLOSED' | 'PERMANENTLY_CLOSED' | 'HIDDEN';
+  status:
+    | "OPERATIONAL"
+    | "TEMPORARILY_CLOSED"
+    | "PERMANENTLY_CLOSED"
+    | "HIDDEN";
   /** What entry permissions are required for this resource */
-  entry_type?: 'OPEN' | 'RESTRICTED' | 'UNSURE' | null;
+  entry_type?: "OPEN" | "RESTRICTED" | "UNSURE" | null;
   /** The hours of operation for this resource, if available */
   hours?: GooglePlacesPeriod[] | null;
   /** If the resource_type is WATER, the information about the water resource */
@@ -163,10 +177,10 @@ export interface ResourceEntry {
 /**
  * Resource type constants for easy use
  */
-export const WATER_RESOURCE_TYPE = 'WATER' as const;
-export const FOOD_RESOURCE_TYPE = 'FOOD' as const;
-export const FORAGE_RESOURCE_TYPE = 'FORAGE' as const;
-export const BATHROOM_RESOURCE_TYPE = 'BATHROOM' as const;
+export const WATER_RESOURCE_TYPE = "WATER" as const;
+export const FOOD_RESOURCE_TYPE = "FOOD" as const;
+export const FORAGE_RESOURCE_TYPE = "FORAGE" as const;
+export const BATHROOM_RESOURCE_TYPE = "BATHROOM" as const;
 
 /**
  * Options for paginated fetching of resources
@@ -177,9 +191,13 @@ export interface FetchResourcesOptions {
   /** The offset for pagination (default: 0) */
   offset?: number;
   /** Filter by resource type */
-  resourceType?: 'WATER' | 'FOOD' | 'FORAGE' | 'BATHROOM';
+  resourceType?: "WATER" | "FOOD" | "FORAGE" | "BATHROOM";
   /** Filter by status */
-  status?: 'OPERATIONAL' | 'TEMPORARILY_CLOSED' | 'PERMANENTLY_CLOSED' | 'HIDDEN';
+  status?:
+    | "OPERATIONAL"
+    | "TEMPORARILY_CLOSED"
+    | "PERMANENTLY_CLOSED"
+    | "HIDDEN";
 }
 
 /**

@@ -1,17 +1,20 @@
-import { type RouteConfig, index } from "@react-router/dev/routes";
+import {
+  type RouteConfig,
+  index,
+  route,
+  layout,
+} from "@react-router/dev/routes";
 
 export default [
-	index("routes/home.tsx"),
-	{
-		path: "admin/SuggestedEdits",
-		file: "admin/SuggestedEdits.tsx"
-	},
-	{
-		path: "admin/ResourceReports",
-		file: "admin/ResourceReports.tsx"
-	},
-	{
-		path: "admin/ResourceChangelog",
-		file: "admin/ResourceChangelog.tsx"
-	}
+  // AKNOTES: THE MASTER LAYOUT
+  // Everything inside here shares the Sidebar/Header
+  layout("routes/layout.tsx", [
+    // Path: / (The Dashboard Landing)
+    index("routes/dashboard.tsx"),
+
+    route("resources", "routes/resources.tsx"),
+
+    // Path: /users
+    route("users", "routes/users.tsx"),
+  ]),
 ] satisfies RouteConfig;

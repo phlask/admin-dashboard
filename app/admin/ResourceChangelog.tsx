@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 
 // TODO: Define ResourceChangeLog type/schema based on your DB
 // TODO: Implement fetchResourceChangelog() using Supabase
@@ -8,14 +7,14 @@ const ResourceChangelog: React.FC = () => {
   // TODO: Replace with actual data fetching
   const changelog = [
     {
-      id: 'change-1',
-      resourceId: 'resource-123',
-      changedBy: 'admin@phlask.org',
-      changedAt: '2025-11-17',
-      field: 'status',
-      oldValue: 'OPERATIONAL',
-      newValue: 'TEMPORARILY_CLOSED',
-      reason: 'Maintenance',
+      id: "change-1",
+      resourceId: "resource-123",
+      changedBy: "admin@phlask.org",
+      changedAt: "2025-11-17",
+      field: "status",
+      oldValue: "OPERATIONAL",
+      newValue: "TEMPORARILY_CLOSED",
+      reason: "Maintenance",
     },
   ];
 
