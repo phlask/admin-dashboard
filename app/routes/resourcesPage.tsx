@@ -42,9 +42,6 @@ export default function ResourcesPage() {
     };
 
     fetchResources();
-    console.log(
-      `Insde useEffect resourcesData: ${JSON.stringify(resourcesData, null, 2)}`
-    );
   }, [activeTab]);
 
   return (
