@@ -1,12 +1,14 @@
 import { Outlet, NavLink } from "react-router";
 
+import phlasklogo from "../assets/PHLASK_v2.svg";
+
 export default function DashboardLayout() {
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900">
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-100">
           <h1 className="text-xl font-bold text-blue-600 tracking-tight">
-            PHLASK Admin
+            <img src={phlasklogo} alt="PHLASK Logo" />
           </h1>
         </div>
 
@@ -40,7 +42,7 @@ export default function DashboardLayout() {
             Resources
           </NavLink>
 
-          {/* Users Link --- FOR FUTURE*/}
+          {/* Users Link --- this is FOR FUTURE adds*/}
           <NavLink
             to="/users"
             className={({ isActive }) =>
@@ -59,11 +61,11 @@ export default function DashboardLayout() {
       <main className="flex-1 overflow-auto">
         {/* <header className="bg-white border-b border-gray-200 px-8 py-4 sticky top-0 z-10">
           <h2 className="text-sm font-semibold text-gray-500">
-            Header if needed can be added
+            Header if/as needed can be added here
           </h2>
         </header> */}
 
-        {/* This is where the pages (Dashboard, Sites, Users) are rendered */}
+        {/* This is where the pages (Dashboard, ResourceSites, Users) are rendered using Outlet by react router*/}
         <div className="p-8">
           <Outlet />
         </div>

@@ -52,12 +52,13 @@ export function ResourceTable({
                   <button
                     onClick={() => onViewClick(row.id.toString())}
                     className="text-blue-600 hover:underline font-medium"
+                    title="Check and edit resource"
                   >
-                    View
+                    View/Edit
                   </button>
                 </td>
                 {columns.map((col) => (
-                  <td key={String(col.accessorKey)} className="px-6 py-4">
+                  <td key={String(col.accessorKey)} className="px-8 py-4">
                     {col.render
                       ? col.render(row)
                       : (row as any)[col.accessorKey]}

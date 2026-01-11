@@ -154,6 +154,8 @@ export interface ResourceEntry {
   description?: string | null;
   /** A non-address name for this location, such as the business name or park name */
   name?: string | null;
+  /** The unique identifier for resource */
+  id: number;
   /** The current status of this resource */
   status:
     | "OPERATIONAL"

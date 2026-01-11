@@ -1,12 +1,13 @@
 import { useEffect } from "react";
-import { getResources } from "~/utils/supabase";
+import { Link } from "react-router";
+import { getResources } from "~/utils/db";
 
 export default function Dashboard() {
   // AKNOTES:
-  // this is where useLoader has to be used instead of useEffect suggested by Ron????
-  // Data fetching is happenig here ... make this into a sperate comp
+  // this is where useLoader has to be used instead of useEffect suggested by Ron--- check how
 
   // use this data TODO: -- "Suggestions" tab - showing pending edits for a given resource.
+
   // Fetch and log resources when the page loads
   useEffect(() => {
     const fetchAndLogResources = async () => {
@@ -23,11 +24,12 @@ export default function Dashboard() {
         console.log("🗂️  Resources:\n", result.data);
 
         // Log some statistics
+
+        // Resource Type Breakdown
         const resourceTypes = result.data.reduce((acc, resource) => {
           acc[resource.resource_type] = (acc[resource.resource_type] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
-
         console.log("\n📈 Resource types breakdown:", resourceTypes);
 
         // Log a sample resource for reference
@@ -47,7 +49,16 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold text-gray-900 mb-4">
         Dashboard Overview
       </h1>
-      <p className="text-gray-600">Welcome to the main landing page.</p>
+      <p className="text-gray-600">
+        This will be the main dashboard with{" "}
+        <Link
+          to="https://www.figma.com/design/VGGqwl3Eq3GQIAO9I6LoNW/PHLASK?node-id=14132-40149&t=hYoMMFsOQURyASlX-4"
+          className="text-blue-600 hover:underline font-medium"
+        >
+          this
+        </Link>{" "}
+        design
+      </p>
     </div>
   );
 }

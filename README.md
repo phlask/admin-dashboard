@@ -1,4 +1,3 @@
-
 # PHLASK Admin Dashboard
 
 ## Overview
@@ -61,42 +60,47 @@ Deploy the output of `pnpm run build` to your preferred Node.js hosting or conta
   - `admin/` — Admin dashboard views (SuggestedEdits, ResourceReports, ResourceChangelog)
   - `utils/` — Supabase utility functions
   - `types/` — TypeScript types (including ResourceEntry)
-  - `welcome/` — Landing page and logo
 - `public/` — Static assets
 - `Dockerfile` — For container builds
 
 ## How to Contribute / Next Steps
 
 1. **Resource Table Improvements**
-	- Add filtering, sorting, and pagination to resource tables
-	- Add search functionality
+
+   - Add filtering, sorting, and pagination to resource tables
+   - Add search functionality
 
 2. **Suggested Edits**
-	- Implement fetching and reviewing of suggested edits (requires DB schema)
-	- Add approve/reject actions
+
+   - Implement fetching and reviewing of suggested edits (requires DB schema)
+   - Add approve/reject actions
 
 3. **Resource Reports**
-	- Wire up report resolution and dismissal actions
-	- Add filtering by status/type
+
+   - Wire up report resolution and dismissal actions
+   - Add filtering by status/type
 
 4. **Changelog & Rollback**
-	- Implement changelog fetching (requires DB schema)
-	- Add rollback functionality for resource changes
+
+   - Implement changelog fetching (requires DB schema)
+   - Add rollback functionality for resource changes
 
 5. **UI/UX**
-	- Add navigation, breadcrumbs, and better error/loading states
-	- Improve accessibility and mobile responsiveness
+
+   - Add navigation, breadcrumbs, and better error/loading states
+   - Improve accessibility and mobile responsiveness
 
 6. **Testing**
-	- Add unit and integration tests for components and utilities
+
+   - Add unit and integration tests for components and utilities
 
 7. **Documentation**
-	- Expand this README with API details and developer setup notes
+   - Expand this README with API details and developer setup notes
 
 ## Where to Build Next
 
 - Start by improving the admin views in `app/admin/`
-- Check `app/utils/supabase.ts` for database helpers
+- Check `app/utils/db.ts` for database helpers
 - Update or add new TypeScript types in `app/types/`
 - For new features, create a new branch and open a pull request
 

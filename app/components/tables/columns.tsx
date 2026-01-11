@@ -1,4 +1,5 @@
 import type { ResourceEntry } from "~/types/ResourceEntry";
+
 export type ColumnDefinition = {
   header: string;
   accessorKey: keyof ResourceEntry | string;
@@ -6,10 +7,10 @@ export type ColumnDefinition = {
   render?: (row: ResourceEntry) => React.ReactNode;
 };
 
-// 1. Common Columns
+// Common Columns for all Resources
 export const COMMON_COLUMNS: ColumnDefinition[] = [
-  { header: "ID", accessorKey: "id", width: "50px" },
-  { header: "Name", accessorKey: "name", width: "200px" },
+  { header: "Site ID", accessorKey: "id", width: "70px" },
+  { header: "Site Title", accessorKey: "name", width: "200px" },
   {
     header: "Address",
     accessorKey: "address",
@@ -41,16 +42,19 @@ export const COMMON_COLUMNS: ColumnDefinition[] = [
     header: "Verification",
     accessorKey: "verification.verified",
     render: (row) =>
-      row.verification?.verified ? "✅ Verified" : "⚠️ Unverified",
+      row.verification?.verified ? (
+        <span className="text-green-400">Verified</span>
+      ) : (
+        <span className="text-red-400">Unverified</span>
+      ),
   },
 ];
 
-// 2. Specific Columns for WATER
+// Specific Columns for WATER
 export const WATER_COLUMNS: ColumnDefinition[] = [
   {
     header: "Dispenser Type",
     accessorKey: "water.dispenser_type",
-    // FIX: Add ?. before map or use || []
     render: (row) => row.water?.dispenser_type?.join(", ") || "N/A",
   },
   {
@@ -58,7 +62,6 @@ export const WATER_COLUMNS: ColumnDefinition[] = [
     accessorKey: "water.tags",
     render: (row) => (
       <div className="flex gap-1 flex-wrap">
-        {/* FIX: Add ?. before map to safely handle null arrays */}
         {row.water?.tags?.map((tag) => (
           <span
             key={tag}
@@ -72,23 +75,23 @@ export const WATER_COLUMNS: ColumnDefinition[] = [
   },
 ];
 
-// 3. Specific Columns for FOOD
+// Specific Columns for FOOD
 export const FOOD_COLUMNS: ColumnDefinition[] = [
   {
     header: "Food Type",
     accessorKey: "food.food_type",
-    // FIX: Safe join
     render: (row) => row.food?.food_type?.join(", ") || "N/A",
   },
   {
     header: "Distribution",
     accessorKey: "food.distribution_type",
-    // FIX: Safe join
     render: (row) => row.food?.distribution_type?.join(", ") || "N/A",
   },
 ];
 
-// 4. The Master Config Object
+// custom colums for other resouses can be added as above as needed
+
+// Colums Config Object
 export const RESOURCE_COLUMNS_CONFIG = {
   WATER: [...COMMON_COLUMNS, ...WATER_COLUMNS],
   FOOD: [...COMMON_COLUMNS, ...FOOD_COLUMNS],

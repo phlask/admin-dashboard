@@ -6,15 +6,13 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
-  // AKNOTES: THE MASTER LAYOUT
-  // Everything inside here shares the Sidebar/Header
-  layout("routes/layout.tsx", [
+  // Everything inside here shares the Sidebar and header from layout.tsx
+  layout("routes/_layout.tsx", [
     // Path: / (The Dashboard Landing)
-    index("routes/dashboard.tsx"),
+    index("routes/dashboardPage.tsx"),
 
-    route("resources", "routes/resources.tsx"),
-
-    // Path: /users
-    route("users", "routes/users.tsx"),
+    // path: /resources and /users
+    route("resources", "routes/resourcesPage.tsx"),
+    route("users", "routes/usersPage.tsx"),
   ]),
 ] satisfies RouteConfig;
