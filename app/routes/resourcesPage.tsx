@@ -1,4 +1,9 @@
-import { useLoaderData, useNavigation, useSearchParams } from "react-router";
+import {
+  data,
+  useLoaderData,
+  useNavigation,
+  useSearchParams,
+} from "react-router";
 
 import type { ResourceEntry } from "~/types/ResourceEntry";
 import { getResources } from "~/utils/db";
@@ -9,18 +14,16 @@ import type { Route } from "../+types/root";
 
 type ResourceType = "WATER" | "FOOD" | "FORAGE" | "BATHROOM";
 
-type LoaderResult = {
-  resources: {
-    data: ResourceEntry[];
-    count: number | null;
-    hasMore: boolean;
-  };
-  activeTab: ResourceType;
-};
+// type LoaderResult = {
+//   resources: {
+//     data: ResourceEntry[];
+//     count: number | null;
+//     hasMore: boolean;
+//   };
+//   activeTab: ResourceType;
+// };
 
-export async function loader({
-  request,
-}: Route.LoaderArgs): Promise<LoaderResult> {
+export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const activeTab = (url.searchParams.get("tab") as ResourceType) || "WATER";
 
@@ -41,6 +44,8 @@ export default function ResourcesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleTabChange = (newTab: ResourceType) => {
+    if (newTab === activeTab) return;
+
     setSearchParams((prev) => {
       prev.set("tab", newTab);
 
