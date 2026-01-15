@@ -1,16 +1,12 @@
-import {
-  data,
-  useLoaderData,
-  useNavigation,
-  useSearchParams,
-} from "react-router";
+import { useLoaderData, useNavigation, useSearchParams } from "react-router";
 
-import type { ResourceEntry } from "~/types/ResourceEntry";
 import { getResources } from "~/utils/db";
 
 import { ResourceTable } from "~/components/tables/ResourcesTable";
 import { RESOURCE_COLUMNS_CONFIG } from "~/components/tables/columns";
+
 import type { Route } from "../+types/root";
+import type { ResourceEntry } from "~/types/ResourceEntry";
 
 type ResourceType = "WATER" | "FOOD" | "FORAGE" | "BATHROOM";
 

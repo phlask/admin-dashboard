@@ -3,7 +3,6 @@ import { useEffect } from "react";
 
 import { getResources } from "~/utils/db";
 
-import type { Route } from "../+types/root";
 import type { FetchResourcesResult } from "~/types/ResourceEntry";
 
 export async function loader(): Promise<FetchResourcesResult> {
