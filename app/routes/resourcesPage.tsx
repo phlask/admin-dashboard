@@ -1,17 +1,44 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router";
+import { useLoaderData, useNavigation, useSearchParams } from "react-router";
 
 import type { ResourceEntry } from "~/types/ResourceEntry";
 import { getResources } from "~/utils/db";
 
 import { ResourceTable } from "~/components/tables/ResourcesTable";
 import { RESOURCE_COLUMNS_CONFIG } from "~/components/tables/columns";
+import type { Route } from "../+types/root";
 
 type ResourceType = "WATER" | "FOOD" | "FORAGE" | "BATHROOM";
 
+type LoaderResult = {
+  resources: {
+    data: ResourceEntry[];
+    count: number | null;
+    hasMore: boolean;
+  };
+  activeTab: ResourceType;
+};
+
+export async function loader({
+  request,
+}: Route.LoaderArgs): Promise<LoaderResult> {
+  const url = new URL(request.url);
+  const activeTab = (url.searchParams.get("tab") as ResourceType) || "WATER";
+
+  const resources = await getResources({
+    resourceType: activeTab,
+    limit: 20,
+  });
+
+  return { resources, activeTab };
+}
+
 export default function ResourcesPage() {
+  const { resources, activeTab } = useLoaderData<typeof loader>();
+
+  const navigation = useNavigation();
+  const isDataLoading = navigation.state === "loading";
+
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = (searchParams.get("tab") as ResourceType) || "WATER";
 
   const handleTabChange = (newTab: ResourceType) => {
     setSearchParams((prev) => {
@@ -20,29 +47,6 @@ export default function ResourcesPage() {
       return prev;
     });
   };
-
-  const [resourcesData, setResourcesData] = useState<ResourceEntry[]>([]);
-  const [loadingState, setLoadingState] = useState(true);
-
-  // AKNOTES: look to use what Ron mentioned instead of useEffect
-  useEffect(() => {
-    const fetchResources = async () => {
-      setLoadingState(true);
-      try {
-        const fetchedResources = await getResources({
-          resourceType: activeTab,
-          limit: 20,
-        });
-        setResourcesData(fetchedResources.data);
-      } catch (error) {
-        console.error("Failed to get resources", error);
-      } finally {
-        setLoadingState(false);
-      }
-    };
-
-    fetchResources();
-  }, [activeTab]);
 
   return (
     <div className="p-6 space-y-6">
@@ -83,9 +87,9 @@ export default function ResourcesPage() {
       </div>
 
       <ResourceTable
-        data={resourcesData}
+        data={resources.data}
         columns={RESOURCE_COLUMNS_CONFIG[activeTab]}
-        isLoading={loadingState}
+        isLoading={isDataLoading}
         //  this can later be used to take us to resource edit page
         onViewClick={(id) => console.log("Navigate to", id)}
       />

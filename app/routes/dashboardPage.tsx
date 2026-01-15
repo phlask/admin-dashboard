@@ -1,64 +1,58 @@
+import { data, Link, useLoaderData } from "react-router";
 import { useEffect } from "react";
-import { Link } from "react-router";
+
 import { getResources } from "~/utils/db";
 
+import type { Route } from "../+types/root";
+import type { FetchResourcesResult } from "~/types/ResourceEntry";
+
+export async function loader(): Promise<FetchResourcesResult> {
+  try {
+    const fetchedData = await getResources({ limit: 15, offset: 0 });
+    return fetchedData;
+  } catch (error) {
+    console.error("Server Failed to Fetch Data");
+    throw data("Failed to fetch data", { status: 500 });
+  }
+}
+
 export default function Dashboard() {
-  // AKNOTES:
-  // this is where useLoader has to be used instead of useEffect suggested by Ron--- check how
+  const loaderData = useLoaderData<typeof loader>();
 
-  // use this data TODO: -- "Suggestions" tab - showing pending edits for a given resource.
-
-  // Fetch and log resources when the page loads
   useEffect(() => {
-    const fetchAndLogResources = async () => {
-      try {
-        console.log("🔄 Fetching PHLask resources...");
-
-        // Fetch the first page of resources
-        const result = await getResources({ limit: 10, offset: 0 });
-
-        console.log("✅ Successfully fetched resources!");
-        console.log(`📊 Total count: ${result.count}`);
-        console.log(`📄 Fetched ${result.data.length} resources`);
-        console.log(`➡️  More available: ${result.hasMore}`);
-        console.log("🗂️  Resources:\n", result.data);
-
-        // Log some statistics
-
-        // Resource Type Breakdown
-        const resourceTypes = result.data.reduce((acc, resource) => {
-          acc[resource.resource_type] = (acc[resource.resource_type] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-        console.log("\n📈 Resource types breakdown:", resourceTypes);
-
-        // Log a sample resource for reference
-        if (result.data.length > 0) {
-          console.log("\n📝 Sample resource:", result.data[0]);
-        }
-      } catch (error) {
-        console.error("❌ Error fetching resources:", error);
-      }
-    };
-
-    fetchAndLogResources();
-  }, []);
+    console.log("Full Loader Data:", loaderData);
+    console.log("Resources:", loaderData?.data);
+    console.log("Count:", loaderData?.count);
+  }, [loaderData]);
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-4">
-        Dashboard Overview
-      </h1>
-      <p className="text-gray-600">
-        This will be the main dashboard with{" "}
+    <>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+          Dashboard Overview
+        </h1>
+        <p>
+          This will be the main dashboard with{" "}
+          <Link
+            to="https://www.figma.com/design/VGGqwl3Eq3GQIAO9I6LoNW/PHLASK?node-id=14132-40149&t=hYoMMFsOQURyASlX-4"
+            className="text-blue-600 hover:underline font-medium"
+          >
+            this{" "}
+          </Link>
+          design
+        </p>
+        <br />
+      </div>
+      <div>
+        <p>Check Logs in Console to see how the data looks like</p>
+        <br />
         <Link
-          to="https://www.figma.com/design/VGGqwl3Eq3GQIAO9I6LoNW/PHLASK?node-id=14132-40149&t=hYoMMFsOQURyASlX-4"
+          to="https://reactrouter.com/start/framework/data-loading"
           className="text-blue-600 hover:underline font-medium"
         >
-          this
-        </Link>{" "}
-        design
-      </p>
-    </div>
+          Fetched Based on
+        </Link>
+      </div>
+    </>
   );
 }
