@@ -1,22 +1,21 @@
 /**
- * PHLask Supabase Database Utilities
+ * PHLask Database Utilities
  *
  * This module provides utility functions for interacting with the PHLask resource database
  * stored in Supabase. It includes functions for fetching (with pagination), editing, and
  * deleting resource entries.
  *
- * @module supabase
+ * @module db
  *
  * @example
  * // Fetch all resources
- * import { getResources } from '~/utils/supabase';
+ * import { getResources } from '~/utils/db';
  *
  * const { data, count } = await getResources();
- * console.log(`Found ${count} resources`, data);
  *
  * @example
  * // Fetch resources with pagination
- * import { getResources } from '~/utils/supabase';
+ * import { getResources } from '~/utils/db';
  *
  * const result = await getResources({
  *   limit: 20,
@@ -27,7 +26,7 @@
  *
  * @example
  * // Update a resource
- * import { updateResource } from '~/utils/supabase';
+ * import { updateResource } from '~/utils/db';
  *
  * const updated = await updateResource({
  *   id: '123',
@@ -38,7 +37,7 @@
  *
  * @example
  * // Delete a resource
- * import { deleteResource } from '~/utils/supabase';
+ * import { deleteResource } from '~/utils/db';
  *
  * await deleteResource('resource-id-123');
  */
@@ -49,6 +48,7 @@ import type {
   FetchResourcesOptions,
   FetchResourcesResult,
 } from '~/types/ResourceEntry';
+import { calculateDistance } from '~/utils/distance';
 
 /**
  * Supabase database configuration
@@ -402,33 +402,4 @@ export async function getResourcesNearby(
     );
     return distance <= radiusMeters;
   });
-}
-
-/**
- * Calculates the distance between two geographic points using the Haversine formula.
- *
- * @param lat1 - Latitude of the first point
- * @param lon1 - Longitude of the first point
- * @param lat2 - Latitude of the second point
- * @param lon2 - Longitude of the second point
- * @returns Distance in meters
- */
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371e3; // Earth's radius in meters
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c;
 }
