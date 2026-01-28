@@ -2,17 +2,17 @@ import type {
   ResourceEntry,
   ResourceStatus,
   ResourceType,
-} from "~/types/ResourceEntry";
-import type { ModelAPI } from "../types";
-import { client } from "../client";
+} from '~/types/ResourceEntry';
+import type { ModelAPI } from '~/api/types';
+import { client } from '~/api/client';
 
 /**
  * Options for paginated fetching of resources
  */
 export type ResourceEntryGetListParams = {
-  /** The number of resources to fetch per page (default: 50) */
+  /** The number of resources to fetch per page */
   limit?: number;
-  /** The offset for pagination (default: 0) */
+  /** The offset for pagination */
   offset?: number;
   /** Filter by resource type */
   resourceType?: ResourceType;
@@ -20,19 +20,7 @@ export type ResourceEntryGetListParams = {
   status?: ResourceStatus;
 };
 
-/**
- * Result of a paginated fetch operation
- */
-export type FetchResourcesResult = {
-  /** The resources fetched */
-  data: ResourceEntry[];
-  /** The total count of resources matching the query */
-  count: number | null;
-  /** Whether there are more resources to fetch */
-  hasMore: boolean;
-};
-
-const TABLE_NAME = "resources";
+const TABLE_NAME = 'resources';
 const table = client.from(TABLE_NAME);
 
 export const ResourceEntryAPI: ModelAPI<
@@ -42,20 +30,20 @@ export const ResourceEntryAPI: ModelAPI<
   getList: async (params) => {
     const { limit, offset, resourceType, status } = params;
     const isPaginating =
-      typeof limit === "number" && typeof offset === "number";
+      typeof limit === 'number' && typeof offset === 'number';
 
-    let query = table.select("*", { count: "exact" });
+    let query = table.select('*', { count: 'exact' });
 
     if (isPaginating) {
       query = query.range(offset, offset + limit - 1);
     }
 
     if (resourceType) {
-      query = query.eq("resource_type", resourceType);
+      query = query.eq('resource_type', resourceType);
     }
 
     if (status) {
-      query = query.eq("status", status);
+      query = query.eq('status', status);
     }
 
     const { data, error, count } = await query;
@@ -76,8 +64,8 @@ export const ResourceEntryAPI: ModelAPI<
   },
   getById: async (id) => {
     const { data, error } = await table
-      .select("*")
-      .eq("id", id)
+      .select('*')
+      .eq('id', id)
       .single<ResourceEntry>();
 
     if (error) {
@@ -101,7 +89,7 @@ export const ResourceEntryAPI: ModelAPI<
   updateById: async (id, values) => {
     const { data, error } = await table
       .update(values)
-      .eq("id", id)
+      .eq('id', id)
       .single<ResourceEntry>();
 
     if (error) {
@@ -111,7 +99,7 @@ export const ResourceEntryAPI: ModelAPI<
     return data;
   },
   delete: async (id) => {
-    const { error } = await table.delete().eq("id", id);
+    const { error } = await table.delete().eq('id', id);
 
     if (error) {
       throw error;

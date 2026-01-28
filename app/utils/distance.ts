@@ -1,12 +1,4 @@
 /**
- * Geographic Distance Utilities
- *
- * This module provides utility functions for calculating distances between geographic coordinates.
- *
- * @module distance
- */
-
-/**
  * Calculates the distance between two geographic points using the Haversine formula.
  *
  * @param lat1 - Latitude of the first point
