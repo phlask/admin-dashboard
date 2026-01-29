@@ -9,10 +9,11 @@ export default [
   // Everything inside here shares the Sidebar and header from layout.tsx
   layout('routes/_layout.tsx', [
     // Path: / (The Dashboard Landing)
-    index('routes/dashboardPage.tsx'),
+    index('routes/dashboard.tsx'),
 
     // path: /resources and /users
-    route('resources', 'routes/resourcesPage.tsx'),
-    route('users', 'routes/usersPage.tsx'),
+    route('resources', 'routes/resources.tsx'),
+    route('users', 'routes/users.tsx'),
+    route('sitesponsers', 'routes/sitesponsers.tsx'),
   ]),
 ] satisfies RouteConfig;

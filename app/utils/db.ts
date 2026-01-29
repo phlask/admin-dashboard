@@ -1,5 +1,3 @@
-//TODO: Update file name to db.ts
-
 /**
  * PHLask Supabase Database Utilities
  *
@@ -45,12 +43,12 @@
  * await deleteResource('resource-id-123');
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 import type {
   ResourceEntry,
   FetchResourcesOptions,
   FetchResourcesResult,
-} from "~/types/ResourceEntry";
+} from '~/types/ResourceEntry';
 
 /**
  * Supabase database configuration
@@ -60,13 +58,9 @@ import type {
  * - VITE_DB_NAME: The name of the resources table
  * - VITE_DB_API_KEY: The Supabase API key (anon/public key)
  */
-const databaseUrl =
-  import.meta.env.VITE_DB_URL || "https://wantycfbnzzocsbthqzs.supabase.co";
-const resourceDatabaseName = import.meta.env.VITE_DB_NAME || "resources";
-const databaseApiKey =
-  import.meta.env.VITE_DB_API_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhbnR5Y2Zibnp6b2NzYnRocXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcwNDY2OTgsImV4cCI6MjA1MjYyMjY5OH0.yczsMOx3Y-zsWu-GjYEajIb0yw9fYWEIUglmmfM1zCY";
-
+const databaseUrl = import.meta.env.VITE_DB_URL;
+const resourceDatabaseName = import.meta.env.VITE_DB_NAME || 'resources';
+const databaseApiKey = import.meta.env.VITE_DB_API_KEY;
 /**
  * Supabase client instance
  *
@@ -121,22 +115,22 @@ export const supabase = createClient(databaseUrl, databaseApiKey);
  * }
  */
 export async function getResources(
-  options: FetchResourcesOptions = {}
+  options: FetchResourcesOptions = {},
 ): Promise<FetchResourcesResult> {
   const { limit = 50, offset = 0, resourceType, status } = options;
 
   // Build the query with filters
   let query = supabase
     .from(resourceDatabaseName)
-    .select("*", { count: "exact" })
+    .select('*', { count: 'exact' })
     .range(offset, offset + limit - 1);
 
   // Apply filters if provided
   if (resourceType) {
-    query = query.eq("resource_type", resourceType);
+    query = query.eq('resource_type', resourceType);
   }
   if (status) {
-    query = query.eq("status", status);
+    query = query.eq('status', status);
   }
 
   const { data, error, count } = await query;
@@ -168,16 +162,16 @@ export async function getResources(
  * }
  */
 export async function getResourceById(
-  id: string
+  id: string,
 ): Promise<ResourceEntry | null> {
   const { data, error } = await supabase
     .from(resourceDatabaseName)
-    .select("*")
-    .eq("id", id)
+    .select('*')
+    .eq('id', id)
     .single();
 
   if (error) {
-    if (error.code === "PGRST116") {
+    if (error.code === 'PGRST116') {
       // Resource not found
       return null;
     }
@@ -227,10 +221,10 @@ export async function getResourceById(
  * });
  */
 export async function updateResource(
-  resource: Partial<ResourceEntry> & { id: string }
+  resource: Partial<ResourceEntry> & { id: string },
 ): Promise<ResourceEntry> {
   if (!resource.id) {
-    throw new Error("Resource ID is required for updates");
+    throw new Error('Resource ID is required for updates');
   }
 
   const { data, error } = await supabase
@@ -287,7 +281,7 @@ export async function updateResource(
  * console.log('Created resource with ID:', newResource.id);
  */
 export async function addResource(
-  resource: Omit<ResourceEntry, "id">
+  resource: Omit<ResourceEntry, 'id'>,
 ): Promise<ResourceEntry> {
   const { data, error } = await supabase
     .from(resourceDatabaseName)
@@ -329,13 +323,13 @@ export async function addResource(
  */
 export async function deleteResource(id: string): Promise<void> {
   if (!id) {
-    throw new Error("Resource ID is required for deletion");
+    throw new Error('Resource ID is required for deletion');
   }
 
   const { error } = await supabase
     .from(resourceDatabaseName)
     .delete()
-    .eq("id", id);
+    .eq('id', id);
 
   if (error) {
     throw new Error(`Failed to delete resource: ${error.message}`);
@@ -367,20 +361,20 @@ export async function getResourcesNearby(
   latitude: number,
   longitude: number,
   radiusMeters: number = 1000,
-  options: Omit<FetchResourcesOptions, "offset"> = {}
+  options: Omit<FetchResourcesOptions, 'offset'> = {},
 ): Promise<ResourceEntry[]> {
   const { limit = 50, resourceType, status } = options;
 
   // Note: This assumes your Supabase database has PostGIS enabled
   // and the resources table has a proper geographic index
-  let query = supabase.from(resourceDatabaseName).select("*").limit(limit);
+  let query = supabase.from(resourceDatabaseName).select('*').limit(limit);
 
   // Apply filters if provided
   if (resourceType) {
-    query = query.eq("resource_type", resourceType);
+    query = query.eq('resource_type', resourceType);
   }
   if (status) {
-    query = query.eq("status", status);
+    query = query.eq('status', status);
   }
 
   const { data, error } = await query;
@@ -397,7 +391,7 @@ export async function getResourcesNearby(
       latitude,
       longitude,
       resource.latitude,
-      resource.longitude
+      resource.longitude,
     );
     return distance <= radiusMeters;
   });
@@ -416,7 +410,7 @@ function calculateDistance(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ): number {
   const R = 6371e3; // Earth's radius in meters
   const φ1 = (lat1 * Math.PI) / 180;

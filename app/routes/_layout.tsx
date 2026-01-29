@@ -1,6 +1,6 @@
-import { Outlet, NavLink } from "react-router";
+import { Outlet, NavLink } from 'react-router';
 
-import phlasklogo from "../assets/PHLASK_v2.svg";
+import phlasklogo from '../assets/PHLASK_v2.svg';
 
 export default function DashboardLayout() {
   return (
@@ -20,8 +20,8 @@ export default function DashboardLayout() {
             className={({ isActive }) =>
               `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100'
               }`
             }
           >
@@ -34,12 +34,26 @@ export default function DashboardLayout() {
             className={({ isActive }) =>
               `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100'
               }`
             }
           >
             Resources
+          </NavLink>
+
+          {/* Site Sponsers Link --- from design*/}
+          <NavLink
+            to="/sitesponsers"
+            className={({ isActive }) =>
+              `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`
+            }
+          >
+            Site Sponsers
           </NavLink>
 
           {/* Users Link --- this is FOR FUTURE adds*/}
@@ -48,8 +62,8 @@ export default function DashboardLayout() {
             className={({ isActive }) =>
               `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100'
               }`
             }
           >

@@ -1,4 +1,4 @@
-export default function Users() {
+const usersPage = () => {
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-4">User Page</h1>
@@ -8,4 +8,6 @@ export default function Users() {
       </p>
     </div>
   );
-}
+};
+
+export default usersPage;
