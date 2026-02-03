@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is the admin dashboard for the PHLASK project. It provides a web interface for reviewing, editing, and managing community resource data using Supabase as the backend.
+This is the admin dashboard for the [PHLASK](https://github.com/phlask/phlask-map/tree/develop) project. It provides a web interface for reviewing, editing, and managing community resource data using Supabase as the backend.
 
 ### Key Features
 
@@ -15,7 +15,10 @@ This is the admin dashboard for the PHLASK project. It provides a web interface 
 
 ### Installation
 
-Install dependencies:
+Ensure you have [nodejs](https://nodejs.org/en/download) installed on your machine.
+
+Once you are in the root directory of the project.
+Install dependencies with [pnpm](https://pnpm.io/installation):
 
 ```bash
 pnpm install
@@ -31,6 +34,33 @@ pnpm run dev
 
 Visit [http://localhost:5174](http://localhost:5174) to view the app.
 
+### Environment Variables
+
+To see the data & tables create a `.env` file in the root directory with the following variables:
+Need access to the database? Message us in the #phlask-data channel on Slack. Also, refer to the `.env.example` file for more details.
+
+```env
+VITE_DB_NAME="resources"
+VITE_DB_URL="Message us in the #phlask-data channel on Slack"
+VITE_DB_API_KEY="Message us in the #phlask-data channel on Slack"
+
+```
+
+## Deployment
+
+### Docker
+
+To build and run with Docker: Have [Docker](https://docs.docker.com/get-docker/) installed and running.
+
+In the root directory of the project, run:
+
+```bash
+docker build -t phlask-admin-dashboard .
+docker run -p 3000:3000 phlask-admin-dashboard
+```
+
+Replace 3000:3000 with the actual port your application listens on if it is different.
+
 ## Production Build
 
 Build for production:
@@ -39,71 +69,69 @@ Build for production:
 pnpm run build
 ```
 
-## Deployment
-
-### Docker
-
-To build and run with Docker:
-
-```bash
-docker build -t phlask-admin-dashboard .
-docker run -p 3000:3000 phlask-admin-dashboard
-```
-
-### Manual/Cloud
-
-Deploy the output of `pnpm run build` to your preferred Node.js hosting or container platform.
-
 ## Project Structure
 
-- `app/` — Main application code
-  - `admin/` — Admin dashboard views (SuggestedEdits, ResourceReports, ResourceChangelog)
-  - `utils/` — Supabase utility functions
-  - `types/` — TypeScript types (including ResourceEntry)
-- `public/` — Static assets
-- `Dockerfile` — For container builds
+app/
+├── api/
+│ ├── resources/
+│ │ └── methods.ts # API methods related to resources
+│ ├── client.ts # API client setup (fetch/axios wrapper)
+│ └── types.ts # Shared API request/response types
+│
+├── assets/
+│ └── PHILASK_v2.svg # Static assets (logos, images)
+│
+├── constants/
+│ └── db.ts # Database-related constants/config
+│
+├── routes/
+│ ├── \_layout.tsx # Shared layout for route pages
+│ ├── dashboard.tsx # Dashboard page
+│ ├── resources.tsx # Resources page
+│ ├── sitesponsers.tsx # Site sponsors page
+│ └── users.tsx # Users page
+│
+├── types/
+│ └── ResourceEntry.ts # Domain-specific TypeScript types
+│
+├── utils/
+│ ├── db.ts # Database utility/helper functions
+│ └── distance.ts # Distance calculation utilities
+│
+├── app.css # Global app styles
+├── root.tsx # App root component
+└── routes.ts # Route definitions / router config
 
 ## How to Contribute / Next Steps
 
-1. **Resource Table Improvements**
+Please check our https://github.com/phlask/admin-dashboard/issues for open issues and feature requests. Here are some ideas for next steps:
 
+1. **Resource Table Improvements**
    - Add filtering, sorting, and pagination to resource tables
    - Add search functionality
 
 2. **Suggested Edits**
-
    - Implement fetching and reviewing of suggested edits (requires DB schema)
    - Add approve/reject actions
 
 3. **Resource Reports**
-
    - Wire up report resolution and dismissal actions
    - Add filtering by status/type
 
 4. **Changelog & Rollback**
-
    - Implement changelog fetching (requires DB schema)
    - Add rollback functionality for resource changes
 
 5. **UI/UX**
-
    - Add navigation, breadcrumbs, and better error/loading states
    - Improve accessibility and mobile responsiveness
 
 6. **Testing**
-
    - Add unit and integration tests for components and utilities
 
 7. **Documentation**
    - Expand this README with API details and developer setup notes
 
-## Where to Build Next
-
-- Start by improving the admin views in `app/admin/`
-- Check `app/utils/db.ts` for database helpers
-- Update or add new TypeScript types in `app/types/`
-- For new features, create a new branch and open a pull request
-
 ---
 
-Built with ❤️ by the PHLASK team.
+Building with ❤️ by the PHLASK team.
