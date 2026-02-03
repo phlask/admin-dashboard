@@ -1,7 +1,5 @@
 # PHLASK Admin Dashboard
 
-## Overview
-
 This is the admin dashboard for the [PHLASK](https://github.com/phlask/phlask-map/tree/develop) project. It provides a web interface for reviewing, editing, and managing community resource data using Supabase as the backend.
 
 ### Key Features
@@ -32,79 +30,68 @@ Start the development server:
 pnpm run dev
 ```
 
-Visit [http://localhost:5174](http://localhost:5174) to view the app.
+Visit [http://localhost:5174](http://localhost:5174) or as output in the terminal from pnpm run dev to view the app.
 
 ### Environment Variables
 
 To see the data & tables create a `.env` file in the root directory with the following variables:
-Need access to the database? Message us in the #phlask-data channel on Slack. Also, refer to the `.env.example` file for more details.
-
 ```env
 VITE_DB_NAME="resources"
 VITE_DB_URL="Message us in the #phlask-data channel on Slack"
 VITE_DB_API_KEY="Message us in the #phlask-data channel on Slack"
-
 ```
-
-## Deployment
+Need access to the database? Message us in the [#phlask-data](https://codeforphilly.org/chat) channel on Slack. Also, refer to the `.env.example` file for more details.
 
 ### Docker
 
 To build and run with Docker: Have [Docker](https://docs.docker.com/get-docker/) installed and running.
 
 In the root directory of the project, run:
-
 ```bash
 docker build -t phlask-admin-dashboard .
 docker run -p 3000:3000 phlask-admin-dashboard
 ```
-
 Replace 3000:3000 with the actual port your application listens on if it is different.
 
 ## Production Build
 
 Build for production:
-
 ```bash
 pnpm run build
 ```
 
 ## Project Structure
 
+```text
 app/
 ├── api/
-│ ├── resources/
-│ │ └── methods.ts # API methods related to resources
-│ ├── client.ts # API client setup (fetch/axios wrapper)
-│ └── types.ts # Shared API request/response types
-│
+│   ├── resources/
+│   │   └── methods.ts      # API methods related to resources
+│   ├── client.ts           # API client setup 
+│   └── types.ts            # Shared API request/response types
 ├── assets/
-│ └── PHILASK_v2.svg # Static assets (logos, images)
-│
+│   └── PHILASK_v2.svg      # Static assets (logos, images, etc.)
 ├── constants/
-│ └── db.ts # Database-related constants/config
-│
+│   └── db.ts               # Database-related constants/config
 ├── routes/
-│ ├── \_layout.tsx # Shared layout for route pages
-│ ├── dashboard.tsx # Dashboard page
-│ ├── resources.tsx # Resources page
-│ ├── sitesponsers.tsx # Site sponsors page
-│ └── users.tsx # Users page
-│
+│   ├── _layout.tsx         # Shared layout for route pages
+│   ├── dashboard.tsx       # Dashboard page component
+│   ├── resources.tsx       # Resources page component
+│   ├── sitesponsers.tsx    # Site sponsors page component
+│   └── users.tsx           # Users page component
 ├── types/
-│ └── ResourceEntry.ts # Domain-specific TypeScript types
-│
+│   └── ResourceEntry.ts    # Domain-specific TypeScript types
 ├── utils/
-│ ├── db.ts # Database utility/helper functions
-│ └── distance.ts # Distance calculation utilities
-│
-├── app.css # Global app styles
-├── root.tsx # App root component
-└── routes.ts # Route definitions / router config
+│   ├── db.ts               # Database utility/helper functions
+│   └── distance.ts         # Distance calculation utilities
+├── app.css                 # Global application styles
+├── root.tsx                # App root component / Entry point
+└── routes.ts               # Route definitions and router configuration
+```
 
 ## How to Contribute / Next Steps
 
-Please check our https://github.com/phlask/admin-dashboard/issues for open issues and feature requests. Here are some ideas for next steps:
+Please check our [https://github.com/phlask/admin-dashboard/issues](https://github.com/phlask/admin-dashboard/issues) for open issues and feature requests. Here are some ideas for next steps:
 
 1. **Resource Table Improvements**
    - Add filtering, sorting, and pagination to resource tables
