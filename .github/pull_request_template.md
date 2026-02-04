@@ -8,12 +8,12 @@
 <!-- Describe what this PR is trying to solve -->
 
 ## Reference
-<!-- If this PR is associated with a GitHub issue in this repository, specify it here, if not, input N/A -->
+<!-- If this PR is associated with a GitHub issue in this repository, specify it here, if not, put N/A -->
 
 ## Screenshots
 <!-- If your change is visual, it might be helpful to provide some screenshots/videos to showcase the change -->
 
 ## Checklist
 
-- [] Changes have been tested locally
-- [] Changes have been self-reviewed
+- [ ] Changes have been tested locally
+- [ ] Changes have been self-reviewed
