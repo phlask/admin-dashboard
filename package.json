@@ -1,5 +1,5 @@
 {
-  "name": "",
+  "name": "phlask-admin-dashboard",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,7 +7,9 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "format": "prettier --write app/**/*.{tsx,ts}"
+    "format": "biome format",
+    "lint": "biome lint",
+    "ci": "biome ci"
   },
   "dependencies": {
     "@react-router/node": "^7.9.2",
@@ -19,12 +21,12 @@
     "react-router": "^7.9.2"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.14",
     "@react-router/dev": "^7.9.2",
     "@tailwindcss/vite": "^4.1.13",
     "@types/node": "^22",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
-    "prettier": "^3.8.1",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
