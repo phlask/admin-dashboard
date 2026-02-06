@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from "react-router";
+import { NavLink, Outlet } from "react-router";
 
 import phlasklogo from "../assets/PHLASK_v2.svg";
 

@@ -1,14 +1,14 @@
 import {
-  type RouteConfig,
   index,
   // route,
   layout,
-} from '@react-router/dev/routes';
+  type RouteConfig,
+} from "@react-router/dev/routes";
 
 export default [
-  layout('routes/_layout.tsx', [
+  layout("routes/_layout.tsx", [
     // Path: / (The Dashboard Landing)
-    index('routes/dashboard.tsx'),
+    index("routes/dashboard.tsx"),
 
     // add paths
     // route('resources', 'routes/resources.tsx'),
