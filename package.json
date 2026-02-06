@@ -7,7 +7,9 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "format": "prettier --write app/**/*.{tsx,ts}"
+    "format": "biome format",
+    "lint": "biome lint",
+    "ci": "biome ci"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -24,15 +26,16 @@
     "react-router": "^7.13.0"
   },
   "devDependencies": {
-    "@react-router/dev": "^7.13.0",
-    "@tailwindcss/vite": "^4.1.18",
-    "@types/node": "^22.19.7",
-    "@types/react": "^19.2.10",
-    "@types/react-dom": "^19.2.3",
-    "prettier": "^3.8.1",
-    "tailwindcss": "^4.1.18",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1",
+    "@biomejs/biome": "2.3.14",
+    "@react-router/dev": "^7.9.2",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/node": "^22",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "lefthook": "^2.1.0",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264"

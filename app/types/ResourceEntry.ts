@@ -8,86 +8,86 @@
 /**
  * Type of data source for a resource entry.
  */
-export type DataSourceType = 'MANUAL' | 'WEB_SCRAPE';
+export type DataSourceType = "MANUAL" | "WEB_SCRAPE";
 
 /**
  * Type of resource available in the system.
  */
-export type ResourceType = 'WATER' | 'FOOD' | 'FORAGE' | 'BATHROOM';
+export type ResourceType = "WATER" | "FOOD" | "FORAGE" | "BATHROOM";
 
 /**
  * Status of a resource.
  */
 export type ResourceStatus =
-  | 'OPERATIONAL'
-  | 'TEMPORARILY_CLOSED'
-  | 'PERMANENTLY_CLOSED'
-  | 'HIDDEN';
+  | "OPERATIONAL"
+  | "TEMPORARILY_CLOSED"
+  | "PERMANENTLY_CLOSED"
+  | "HIDDEN";
 
 /**
  * Entry permission type for a resource.
  */
-export type EntryType = 'OPEN' | 'RESTRICTED' | 'UNSURE';
+export type EntryType = "OPEN" | "RESTRICTED" | "UNSURE";
 
 /**
  * Type of water dispenser.
  */
 export type DispenserType =
-  | 'DRINKING_FOUNTAIN'
-  | 'BOTTLE_FILLER'
-  | 'SINK'
-  | 'JUG'
-  | 'SODA_MACHINE'
-  | 'PITCHER'
-  | 'WATER_COOLER';
+  | "DRINKING_FOUNTAIN"
+  | "BOTTLE_FILLER"
+  | "SINK"
+  | "JUG"
+  | "SODA_MACHINE"
+  | "PITCHER"
+  | "WATER_COOLER";
 
 /**
  * Tags for water resources.
  */
 export type WaterTag =
-  | 'WHEELCHAIR_ACCESSIBLE'
-  | 'FILTERED'
-  | 'BYOB'
-  | 'ID_REQUIRED';
+  | "WHEELCHAIR_ACCESSIBLE"
+  | "FILTERED"
+  | "BYOB"
+  | "ID_REQUIRED";
 
 /**
  * Type of food available.
  */
-export type FoodType = 'PERISHABLE' | 'NON_PERISHABLE' | 'PREPARED';
+export type FoodType = "PERISHABLE" | "NON_PERISHABLE" | "PREPARED";
 
 /**
  * Distribution type for food resources.
  */
-export type DistributionType = 'EAT_ON_SITE' | 'DELIVERY' | 'PICKUP';
+export type DistributionType = "EAT_ON_SITE" | "DELIVERY" | "PICKUP";
 
 /**
  * Organization type for food resources.
  */
 export type OrganizationType =
-  | 'GOVERNMENT'
-  | 'BUSINESS'
-  | 'NON_PROFIT'
-  | 'UNSURE';
+  | "GOVERNMENT"
+  | "BUSINESS"
+  | "NON_PROFIT"
+  | "UNSURE";
 
 /**
  * Type of foraging resources.
  */
-export type ForageType = 'NUT' | 'FRUIT' | 'LEAVES' | 'BARK' | 'FLOWERS';
+export type ForageType = "NUT" | "FRUIT" | "LEAVES" | "BARK" | "FLOWERS";
 
 /**
  * Tags for foraging resources.
  */
-export type ForageTag = 'MEDICINAL' | 'IN_SEASON' | 'COMMUNITY_GARDEN';
+export type ForageTag = "MEDICINAL" | "IN_SEASON" | "COMMUNITY_GARDEN";
 
 /**
  * Tags for bathroom resources.
  */
 export type BathroomTag =
-  | 'WHEELCHAIR_ACCESSIBLE'
-  | 'GENDER_NEUTRAL'
-  | 'CHANGING_TABLE'
-  | 'SINGLE_OCCUPANCY'
-  | 'FAMILY';
+  | "WHEELCHAIR_ACCESSIBLE"
+  | "GENDER_NEUTRAL"
+  | "CHANGING_TABLE"
+  | "SINGLE_OCCUPANCY"
+  | "FAMILY";
 
 /**
  * A data source defining where the resource data entry came from.
@@ -244,7 +244,7 @@ export type ResourceEntry = {
 /**
  * Resource type constants for easy use
  */
-export const WATER_RESOURCE_TYPE = 'WATER';
-export const FOOD_RESOURCE_TYPE = 'FOOD';
-export const FORAGE_RESOURCE_TYPE = 'FORAGE';
-export const BATHROOM_RESOURCE_TYPE = 'BATHROOM';
+export const WATER_RESOURCE_TYPE = "WATER";
+export const FOOD_RESOURCE_TYPE = "FOOD";
+export const FORAGE_RESOURCE_TYPE = "FORAGE";
+export const BATHROOM_RESOURCE_TYPE = "BATHROOM";
