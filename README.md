@@ -40,7 +40,10 @@ VITE_DB_NAME="resources"
 VITE_DB_URL="Message us in the #phlask-data channel on Slack"
 VITE_DB_API_KEY="Message us in the #phlask-data channel on Slack"
 ```
+<<<<<<< Updated upstream
 Need access to the database? Message us in the [#phlask-data](https://codeforphilly.org/chat) channel on Slack. Also, refer to the `.env.example` file for more details.
+=======
+>>>>>>> Stashed changes
 
 ### Docker
 

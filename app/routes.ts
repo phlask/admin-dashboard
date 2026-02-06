@@ -11,9 +11,9 @@ export default [
     // Path: / (The Dashboard Landing)
     index('routes/dashboard.tsx'),
 
-    // path: /resources and /users
-    route('resources', 'routes/resources.tsx'),
-    route('users', 'routes/users.tsx'),
-    route('sitesponsers', 'routes/sitesponsers.tsx'),
+    // // path: /resources and /users
+    // route('resources', 'routes/resources.tsx'),
+    // route('users', 'routes/users.tsx'),
+    // route('sitesponsers', 'routes/sitesponsers.tsx'),
   ]),
 ] satisfies RouteConfig;

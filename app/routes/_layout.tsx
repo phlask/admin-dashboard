@@ -13,7 +13,6 @@ export default function DashboardLayout() {
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {/* Dashboard Link */}
           <NavLink
             to="/"
             end
@@ -27,59 +26,10 @@ export default function DashboardLayout() {
           >
             Dashboard
           </NavLink>
-
-          {/* Resources Link */}
-          <NavLink
-            to="/resources"
-            className={({ isActive }) =>
-              `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`
-            }
-          >
-            Resources
-          </NavLink>
-
-          {/* Site Sponsers Link --- from design*/}
-          <NavLink
-            to="/sitesponsers"
-            className={({ isActive }) =>
-              `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`
-            }
-          >
-            Site Sponsers
-          </NavLink>
-
-          {/* Users Link --- this is FOR FUTURE adds*/}
-          <NavLink
-            to="/users"
-            className={({ isActive }) =>
-              `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`
-            }
-          >
-            Users
-          </NavLink>
         </nav>
       </aside>
 
       <main className="flex-1 overflow-auto">
-        {/* <header className="bg-white border-b border-gray-200 px-8 py-4 sticky top-0 z-10">
-          <h2 className="text-sm font-semibold text-gray-500">
-            Header if/as needed can be added here
-          </h2>
-        </header> */}
-
-        {/* This is where the pages (Dashboard, ResourceSites, Users) are rendered using Outlet by react router*/}
         <div className="p-8">
           <Outlet />
         </div>
