@@ -79,13 +79,9 @@ app/
 ├── routes/
 │   ├── _layout.tsx         # Shared layout for route pages
 │   ├── dashboard.tsx       # Dashboard page component
-│   ├── resources.tsx       # Resources page component
-│   ├── sitesponsers.tsx    # Site sponsors page component
-│   └── users.tsx           # Users page component
 ├── types/
 │   └── ResourceEntry.ts    # Domain-specific TypeScript types
 ├── utils/
-│   ├── db.ts               # Database utility/helper functions
 │   └── distance.ts         # Distance calculation utilities
 ├── app.css                 # Global application styles
 ├── root.tsx                # App root component / Entry point
