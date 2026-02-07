@@ -1,12 +1,12 @@
-import type { Route } from './+types/home';
-import { useLoaderData } from 'react-router';
-import { Welcome } from '../welcome/welcome';
-import ResourcesAPI from '~/api/resources/methods';
+import { useLoaderData } from "react-router";
+import ResourcesAPI from "~/api/resources/methods";
+import { Welcome } from "../welcome/welcome";
+import type { Route } from "./+types/home";
 
-export function meta({}: Route.MetaArgs) {
+export function meta(_metaArgs: Route.MetaArgs) {
   return [
-    { title: 'New React Router App' },
-    { name: 'description', content: 'Welcome to React Router!' },
+    { title: "New React Router App" },
+    { name: "description", content: "Welcome to React Router!" },
   ];
 }
 
