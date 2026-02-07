@@ -15,7 +15,7 @@ This is the admin dashboard for the [PHLASK](https://github.com/phlask/phlask-ma
 
 - Ensure you have [nodejs](https://nodejs.org/en/download) installed on your machine.
 - Ensure you have [pnpm](https://pnpm.io/installation) installed globally for package management.
-- Have Biome [https://biomejs.dev/guides/editors/first-party-extensions/] added to your code editor for consistent code formatting.
+- Have [Biome](https://biomejs.dev/guides/editors/first-party-extensions/) added to your code editor for consistent code formatting.
 
 ### Installation
 
@@ -68,30 +68,6 @@ docker run -p 3000:3000 phlask-admin-dashboard
 
 Replace 3000:3000 with the actual port your application listens on if it is different.
 
-### Contributing and Pull Requests
-
-Please refer to contributing guidelines [here](https://github.com/phlask/phlask-map?tab=readme-ov-file#want-to-add-something-new-or-developreport-a-fix-for-a-bug-you-found).
-
-Before submitting a PR, please ensure that your code adheres to the project's coding standards and passes all tests. We recommend running the following command to check for linting errors and run tests:
-
-```bash
-pnpm biome check --write ./
-```
-
-| Command                        | Description        |
-| ------------------------------ | ------------------ |
-| `pnpm biome check --write ./`  | Check & Fix (Safe) |
-| `pnpm biome format --write ./` | Format Only        |
-| `pnpm biome lint --write ./`   | Lint Only          |
-
-## Production Build
-
-Build for production:
-
-```bash
-pnpm run build
-```
-
 ## Project Structure
 
 ```text
@@ -119,6 +95,21 @@ app/
 
 ## How to Contribute / Next Steps
 
-Please check our [https://github.com/phlask/admin-dashboard/issues](https://github.com/phlask/admin-dashboard/issues) for open issues and feature requests.
+- Please refer to contributing guidelines [here](https://github.com/phlask/phlask-map?tab=readme-ov-file#want-to-add-something-new-or-developreport-a-fix-for-a-bug-you-found).
 
+- Please check our [https://github.com/phlask/admin-dashboard/issues](https://github.com/phlask/admin-dashboard/issues) for open issues and feature requests.
+
+- Before submitting a PR, please ensure that your code adheres to the project's coding standards and passes all tests. We recommend running the following command to check for linting errors and run tests:
+
+```bash
+pnpm biome check --write ./
+```
+
+| Command                        | Description        |
+| ------------------------------ | ------------------ |
+| `pnpm biome check --write ./`  | Check & Fix (Safe) |
+| `pnpm biome format --write ./` | Format Only        |
+| `pnpm biome lint --write ./`   | Lint Only          |
+
+---
 Building with ❤️ by the PHLASK team.
