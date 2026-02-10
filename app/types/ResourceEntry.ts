@@ -186,6 +186,7 @@ export type BathroomInfo = {
  * This is the main type for a resource entry in the database.
  */
 export type ResourceEntry = {
+  id?: string;
   /** Represents the schema that this resource entry is following */
   version?: number;
   /** The date this resource was created, in ISO UTC format */

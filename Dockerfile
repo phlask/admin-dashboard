@@ -1,22 +1,39 @@
-FROM node:20-alpine AS development-dependencies-env
+# Enable pnpm once for all stages
+FROM node:20-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+# 2. Dependencies Stage - Install ALL deps (dev + prod)
+FROM base AS development-dependencies-env
 COPY . /app
 WORKDIR /app
-RUN npm ci
+# We copy only package manifests first to leverage Docker caching
+COPY package.json pnpm-lock.yaml /app/
+RUN pnpm install --frozen-lockfile
 
-FROM node:20-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
+# 3. Production Deps Stage - Install ONLY prod deps
+FROM base AS production-dependencies-env
 WORKDIR /app
-RUN npm ci --omit=dev
+COPY package.json pnpm-lock.yaml /app/
+# --prod ensures devDependencies are skipped
+RUN pnpm install --prod --frozen-lockfile
 
-FROM node:20-alpine AS build-env
+# 4. Build Stage - Compile the source code
+FROM base AS build-env
+WORKDIR /app
 COPY . /app/
+# Copy node_modules from the development stage so we have TS/Build tools
 COPY --from=development-dependencies-env /app/node_modules /app/node_modules
-WORKDIR /app
-RUN npm run build
+RUN pnpm run build
 
-FROM node:20-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
+# 5. Final Stage - The actual runner
+FROM base
 WORKDIR /app
-CMD ["npm", "run", "start"]
+COPY ./package.json ./pnpm-lock.yaml /app/
+# Copy the "clean" production node_modules (no devDeps)
+COPY --from=production-dependencies-env /app/node_modules /app/node_modules
+# Copy the built artifacts
+COPY --from=build-env /app/build /app/build
+
+CMD ["pnpm", "run", "start"]
