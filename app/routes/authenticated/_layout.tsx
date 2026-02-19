@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from "react-router";
 
-import phlasklogo from "../assets/PHLASK_v2.svg";
+import phlasklogo from "~/assets/PHLASK_v2.svg";
+
+export const action = () => {};
 
 export default function DashboardLayout() {
   return (
