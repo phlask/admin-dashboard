@@ -1,35 +1,40 @@
-import { type ActionFunction, redirect } from "react-router";
+import { type LoaderFunction, redirect, useLoaderData } from "react-router";
 import { getServerClient } from "~/api/client.server";
+import { userContext } from "~/context/user";
 
-export const action: ActionFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, context }) => {
   const { client } = getServerClient(request);
+  const url = new URL(request.url);
 
-  const formData = await request.formData();
-  const email = formData.get("email");
-  if (typeof email !== "string") {
-    throw { email: "Invalid" };
+  const tokenHash = url.searchParams.get("token");
+  if (!tokenHash) {
+    return redirect("/auth");
   }
-  const { error } = await client.auth.signInWithOtp({ email });
+
+  const { error, data } = await client.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "magiclink",
+  });
   if (error) {
-    throw error;
+    return redirect("/auth");
+  }
+
+  if (data.session?.access_token && data.session.refresh_token) {
+    client.auth.setSession({
+      access_token: data.session?.access_token,
+      refresh_token: data.session?.refresh_token,
+    });
+  }
+
+  if (data.user) {
+    context.set(userContext, data.user);
   }
 
   return redirect("/");
 };
 
 const VerifyOtp = () => {
-  return (
-    <div>
-      <h1>Verify OTP</h1>
-      <form>
-        <div>
-          <label htmlFor="email">Verify the login code that we sent you</label>
-          <input name="email" />
-        </div>
-        <button type="submit">Login</button>
-      </form>
-    </div>
-  );
+  return null;
 };
 
 export default VerifyOtp;

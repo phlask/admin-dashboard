@@ -10,7 +10,7 @@ export default [
     index("routes/authenticated/dashboard.tsx"),
   ]),
   route("auth", "routes/unauthenticated/_layout.tsx", [
-    route("login", "routes/unauthenticated/login.tsx", { id: "/login" }),
+    index("routes/unauthenticated/login.tsx"),
     route("verify", "routes/unauthenticated/verifyOtp.tsx"),
   ]),
 ] satisfies RouteConfig;

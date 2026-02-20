@@ -1,13 +1,12 @@
+import { Button, Stack, TextField, Typography } from "@mui/material";
 import {
   type ActionFunction,
   data,
   Form,
-  redirect,
   useActionData,
+  useFetcher,
 } from "react-router";
 import { getServerClient } from "~/api/client.server";
-
-export const loader = async () => {};
 
 export const action: ActionFunction = async ({ request }) => {
   const { client } = getServerClient(request);
@@ -15,40 +14,54 @@ export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const email = formData.get("email");
   if (typeof email !== "string" || !email) {
-    return data({ email: "Invalid" });
-  }
-  try {
-    const { error } = await client.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
-    });
-
-    console.log(error);
-    if (error) {
-      throw data(error, { status: error.status, statusText: error.message });
-    }
-  } catch (error) {
-    return data(error);
+    return data({ message: "Email is invalid" });
   }
 
-  return redirect("../verify");
+  const response = await client.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: "http://localhost:5174/auth/verify",
+    },
+  });
+
+  if (response.error) {
+    return { status: response.error.status, message: response.error.message };
+  }
+
+  return {
+    status: 200,
+    message: "Follow instructions in your email to complete sign-in",
+  };
 };
 
 const Login = () => {
-  const action = useActionData();
-  console.log(action);
+  const action = useActionData<{ message: string; status: number }>();
+  const fetcher = useFetcher();
   return (
-    <div>
-      <h1>Login</h1>
+    <Stack gap={4}>
+      <Typography variant="h2">Login</Typography>
       <Form method="post">
-        <div>
-          <label htmlFor="email">Email</label>
-          <input name="email" />
-        </div>
-
-        <button type="submit">Login</button>
+        <Stack gap={1}>
+          <TextField
+            name="email"
+            label="Email"
+            slotProps={{ inputLabel: { shrink: true } }}
+            required
+            sx={{ maxWidth: 400 }}
+          />
+          <Button type="submit">
+            {fetcher.state === "submitting" ? "Submitting..." : "Login"}
+          </Button>
+          <Typography
+            variant="caption"
+            color={action?.status === 200 ? "success" : "error"}
+          >
+            {action?.message}
+          </Typography>
+        </Stack>
       </Form>
-    </div>
+    </Stack>
   );
 };
 
