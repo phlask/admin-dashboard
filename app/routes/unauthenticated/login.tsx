@@ -1,66 +1,112 @@
 import { Button, Stack, TextField, Typography } from "@mui/material";
+import { applySchema } from "composable-functions";
 import {
   type ActionFunction,
   data,
-  Form,
+  type LoaderFunction,
+  redirect,
   useActionData,
-  useFetcher,
 } from "react-router";
-import { getServerClient } from "~/api/client.server";
+import { performMutation, SchemaForm } from "remix-forms";
+import { getDatabaseClient } from "~/api/client.server";
+import { userContext } from "~/context/user";
+import { loginSchema } from "~/schemas/login";
 
-export const action: ActionFunction = async ({ request }) => {
-  const { client } = getServerClient(request);
+export const loader: LoaderFunction = async ({ request }) => {
+  const { client } = getDatabaseClient(request);
 
-  const formData = await request.formData();
-  const email = formData.get("email");
-  if (typeof email !== "string" || !email) {
-    return data({ message: "Email is invalid" });
+  const response = await client.auth.getUser();
+  if (response.error) {
+    return null;
   }
 
-  const response = await client.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: false,
-      emailRedirectTo: "http://localhost:5174/auth/verify",
-    },
+  return redirect("/");
+};
+
+const mutation = applySchema(loginSchema)(async (values) => values);
+
+export const action: ActionFunction = async ({ context, request, params }) => {
+  const result = await performMutation({
+    request,
+    schema: loginSchema,
+    mutation,
+    context: { request, context, params },
   });
 
-  if (response.error) {
-    return { status: response.error.status, message: response.error.message };
+  if (!result.success) {
+    return data(result, 400);
   }
 
-  return {
-    status: 200,
-    message: "Follow instructions in your email to complete sign-in",
-  };
+  const { client, headers } = getDatabaseClient(request);
+  const response = await client.auth.signInWithPassword(result.data);
+
+  if (response.error) {
+    return data(response.error, { status: response.error.status });
+  }
+
+  context.set(userContext, response.data.user);
+
+  return redirect("/", { headers });
 };
 
 const Login = () => {
   const action = useActionData<{ message: string; status: number }>();
-  const fetcher = useFetcher();
+
   return (
     <Stack gap={4}>
       <Typography variant="h2">Login</Typography>
-      <Form method="post">
-        <Stack gap={1}>
-          <TextField
-            name="email"
-            label="Email"
-            slotProps={{ inputLabel: { shrink: true } }}
-            required
-            sx={{ maxWidth: 400 }}
-          />
-          <Button type="submit">
-            {fetcher.state === "submitting" ? "Submitting..." : "Login"}
-          </Button>
-          <Typography
-            variant="caption"
-            color={action?.status === 200 ? "success" : "error"}
-          >
-            {action?.message}
-          </Typography>
-        </Stack>
-      </Form>
+      <SchemaForm schema={loginSchema}>
+        {({ Field, formState, register }) => (
+          <Stack gap={3} maxWidth={400}>
+            <Field name="email">
+              {({ name, errors, required }) => {
+                return (
+                  <TextField
+                    {...register(name, { required })}
+                    autoComplete="username"
+                    label="Email"
+                    fullWidth
+                    slotProps={{ inputLabel: { shrink: true, required } }}
+                    error={Boolean(errors?.length)}
+                    helperText={errors?.at(0) || " "}
+                    sx={{ maxWidth: 400 }}
+                  />
+                );
+              }}
+            </Field>
+            <Field name="password">
+              {({ name, errors, required }) => (
+                <TextField
+                  {...register(name, { required })}
+                  autoComplete="current-password"
+                  label="Password"
+                  type="password"
+                  fullWidth
+                  error={Boolean(errors?.length)}
+                  helperText={errors?.at(0) || " "}
+                  slotProps={{ inputLabel: { shrink: true, required } }}
+                  sx={{ maxWidth: 400 }}
+                />
+              )}
+            </Field>
+            <Typography
+              variant="caption"
+              color={action?.status === 200 ? "success" : "error"}
+            >
+              {action?.message}
+            </Typography>
+
+            <Button
+              disabled={!formState.isValid}
+              loading={formState.isSubmitting}
+              loadingPosition="start"
+              type="submit"
+            >
+              Sign in
+            </Button>
+          </Stack>
+        )}
+      </SchemaForm>
     </Stack>
   );
 };

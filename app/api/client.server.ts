@@ -7,7 +7,7 @@ import {
 } from "@supabase/ssr";
 import { data } from "react-router";
 
-export const getServerClient = (request: Request) => {
+export const getDatabaseClient = (request: Request) => {
   const headers = new Headers();
 
   const SUPABASE_URL = process.env.SUPABASE_URL;

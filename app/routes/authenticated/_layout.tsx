@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet } from "react-router";
 
 import phlasklogo from "~/assets/PHLASK_v2.svg";
 
@@ -14,20 +14,29 @@ export default function DashboardLayout() {
           </h1>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) =>
-              `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`
-            }
+        <nav className="flex flex-col justify-between flex-1 p-4 space-y-1">
+          <ul>
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`
+              }
+            >
+              Dashboard
+            </NavLink>
+          </ul>
+
+          <Link
+            to="/logout"
+            className="block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
           >
-            Dashboard
-          </NavLink>
+            Logout
+          </Link>
         </nav>
       </aside>
 

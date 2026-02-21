@@ -35,6 +35,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      composable-functions:
+        specifier: ^5.0.0
+        version: 5.0.0
       isbot:
         specifier: ^5.1.35
         version: 5.1.35
@@ -44,9 +47,18 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      react-hook-form:
+        specifier: ^7.71.2
+        version: 7.71.2(react@19.2.4)
       react-router:
         specifier: ^7.13.0
         version: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      remix-forms:
+        specifier: ^4.0.0
+        version: 4.0.0(composable-functions@5.0.0)(react-hook-form@7.71.2(react@19.2.4))(react-router@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)(zod@4.3.6)
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@biomejs/biome':
         specifier: 2.3.14
@@ -1023,6 +1035,9 @@ packages:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
 
+  composable-functions@5.0.0:
+    resolution: {integrity: sha512-CV5r9eXpnombeKTHFP895n++aYIJkmpHrlDXqloF0OUYdrXr7CU008R8tcBjaDBcZHrSwB03W1Lv8T8Ly8C37A==}
+
   compressible@2.0.18:
     resolution: {integrity: sha512-AF3r7P5dWxL8MxyITRMlORQNaOA2IkAFaTr4k7BUumjPtRpGDTZpl0Pb1XCO6JeDCBdp126Cgs9sMxqSjgYyRg==}
     engines: {node: '>= 0.6'}
@@ -1593,6 +1608,12 @@ packages:
     peerDependencies:
       react: ^19.2.4
 
+  react-hook-form@7.71.2:
+    resolution: {integrity: sha512-1CHvcDYzuRUNOflt4MOq3ZM46AronNJtQ1S7tnX6YN4y72qhgiUItpacZUAQ0TyWYci3yz1X+rXaSxiuEm86PA==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18 || ^19
+
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
@@ -1626,6 +1647,15 @@ packages:
   readdirp@4.1.2:
     resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
     engines: {node: '>= 14.18.0'}
+
+  remix-forms@4.0.0:
+    resolution: {integrity: sha512-JxhUsBOeHpiuhYoetMXXUloCr7s1qwD+mlME9PrcAeGJU6E+yOjcbinWuH18j1+WOgHM4ny+MkyN4y/BB5kpBg==}
+    peerDependencies:
+      composable-functions: '>=4'
+      react: '>=16.8'
+      react-hook-form: '>=7.27'
+      react-router: '>=7'
+      zod: '>=4.0.0'
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -1855,6 +1885,9 @@ packages:
   yaml@1.10.2:
     resolution: {integrity: sha512-r3vXyErRCYJ7wg28yvBY5VSoAF8ZvlcW9/BwUzEtUsjvX/DKs24dIkuwjtuprwJJHsbyUbLApepYTR1BN4uHrg==}
     engines: {node: '>= 6'}
+
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
 snapshots:
 
@@ -2737,6 +2770,8 @@ snapshots:
 
   clsx@2.1.1: {}
 
+  composable-functions@5.0.0: {}
+
   compressible@2.0.18:
     dependencies:
       mime-db: 1.54.0
@@ -3252,6 +3287,10 @@ snapshots:
       react: 19.2.4
       scheduler: 0.27.0
 
+  react-hook-form@7.71.2(react@19.2.4):
+    dependencies:
+      react: 19.2.4
+
   react-is@16.13.1: {}
 
   react-is@19.2.4: {}
@@ -3278,6 +3317,14 @@ snapshots:
   react@19.2.4: {}
 
   readdirp@4.1.2: {}
+
+  remix-forms@4.0.0(composable-functions@5.0.0)(react-hook-form@7.71.2(react@19.2.4))(react-router@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)(zod@4.3.6):
+    dependencies:
+      composable-functions: 5.0.0
+      react: 19.2.4
+      react-hook-form: 7.71.2(react@19.2.4)
+      react-router: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      zod: 4.3.6
 
   resolve-from@4.0.0: {}
 
@@ -3499,3 +3546,5 @@ snapshots:
   yallist@3.1.1: {}
 
   yaml@1.10.2: {}
+
+  zod@4.3.6: {}
