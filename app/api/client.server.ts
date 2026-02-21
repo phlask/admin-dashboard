@@ -6,15 +6,16 @@ import {
   serializeCookieHeader,
 } from "@supabase/ssr";
 import { data } from "react-router";
+import { databaseApiKey, databaseUrl } from "~/constants/db.server";
 
 export const getDatabaseClient = (request: Request) => {
   const headers = new Headers();
 
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
-
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    throw data(new Error("Credentials are missing"), { status: 500 });
+  if (!databaseUrl || !databaseApiKey) {
+    const message = import.meta.env.DEV
+      ? "Database credentials are missing! Make sure that `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are defined in a `.env` file"
+      : "An unexpected error have happened. Please try again later.";
+    throw data(new Error(message), { status: 500 });
   }
 
   const getAll: GetAllCookies = async () => {
@@ -29,7 +30,7 @@ export const getDatabaseClient = (request: Request) => {
     });
   };
 
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
+  const supabase = createServerClient(databaseUrl, databaseApiKey, {
     cookies: { getAll, setAll },
   });
 
