@@ -10,7 +10,7 @@ export const authMiddleware: MiddlewareFunction = async (
 
   const response = await client.auth.getUser();
   if (response.error) {
-    return redirect("/auth", { status: 401 });
+    return redirect("/auth");
   }
 
   context.set(userContext, response.data.user);
