@@ -28,13 +28,13 @@ pnpm install
 
 ### Environment Variables
 
-To run the app locally, you must create a `.env` file in the root directory with the variables defined in `.env.example` file. You should duplicate this file and populate the missing fields with the API secrets.
+To run the app locally, you must create a `.env` file in the root directory with the variables defined in the `.env.example` file. You should duplicate this file and populate the missing fields with the API secrets.
 
 ```bash
 cp .example.env .env
 ```
 
-Message us in the [#phlask-data](https://codeforphilly.org/chat) channel on Slack if any of these variables are missing. Also, refer to the `.env.example` file for more details.
+Message us in the `#phlask-data` channel on Slack (See [Code For Philly](https://codeforphilly.org/) for more details) if any of these variables are missing. Also, refer to the `.env.example` file for more details.
 
 ### Development
 
