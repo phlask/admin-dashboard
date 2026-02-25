@@ -1,3 +1,8 @@
+import type { MiddlewareFunction } from "react-router";
+import { authMiddleware } from "~/middleware/auth";
+
+export const middleware: MiddlewareFunction[] = [authMiddleware];
+
 export default function Dashboard() {
   return (
     <div>

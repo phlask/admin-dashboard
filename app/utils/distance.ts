@@ -10,7 +10,6 @@
  * @example
  * // Calculate distance between two points
  * const distance = calculateDistance(39.9526, -75.1652, 40.7128, -74.0060);
- * console.log(`Distance: ${distance} meters`);
  */
 export function calculateDistance(
   lat1: number,

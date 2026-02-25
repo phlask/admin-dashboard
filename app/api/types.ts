@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 /**
  * Result of a paginated fetch operation
  */
@@ -10,7 +12,7 @@ type PaginatedResult<Entity> = {
   hasMore: boolean;
 };
 
-export type ModelAPI<Entity, Params> = {
+export type GetModelAPI<Entity, Params> = (client: SupabaseClient) => {
   getList: (params: Params) => Promise<PaginatedResult<Entity>>;
   getById: (id: string) => Promise<Entity>;
   create: (values: Entity) => Promise<Entity>;

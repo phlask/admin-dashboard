@@ -1,5 +1,4 @@
-import { client } from "~/api/client";
-import type { ModelAPI } from "~/api/types";
+import type { GetModelAPI } from "~/api/types";
 import type {
   ResourceEntry,
   ResourceStatus,
@@ -21,90 +20,93 @@ export type ResourceEntryGetListParams = {
 };
 
 const TABLE_NAME = "resources";
-const table = client.from(TABLE_NAME);
 
-export const ResourceEntryAPI: ModelAPI<
+export const getResourceEntryAPI: GetModelAPI<
   ResourceEntry,
   ResourceEntryGetListParams
-> = {
-  getList: async (params) => {
-    const { limit, offset, resourceType, status } = params;
-    const isPaginating =
-      typeof limit === "number" && typeof offset === "number";
+> = (client) => {
+  const table = client.from(TABLE_NAME);
 
-    let query = table.select("*", { count: "exact" });
+  return {
+    getList: async (params) => {
+      const { limit, offset, resourceType, status } = params;
+      const isPaginating =
+        typeof limit === "number" && typeof offset === "number";
 
-    if (isPaginating) {
-      query = query.range(offset, offset + limit - 1);
-    }
+      let query = table.select("*", { count: "exact" });
 
-    if (resourceType) {
-      query = query.eq("resource_type", resourceType);
-    }
+      if (isPaginating) {
+        query = query.range(offset, offset + limit - 1);
+      }
 
-    if (status) {
-      query = query.eq("status", status);
-    }
+      if (resourceType) {
+        query = query.eq("resource_type", resourceType);
+      }
 
-    const { data, error, count } = await query;
+      if (status) {
+        query = query.eq("status", status);
+      }
 
-    if (error) {
-      throw error;
-    }
+      const { data, error, count } = await query;
 
-    if (!data?.length || !count) {
-      return { data: [], count: 0, hasMore: false };
-    }
+      if (error) {
+        throw error;
+      }
 
-    return {
-      data,
-      count,
-      hasMore: isPaginating ? offset + limit < count : false,
-    };
-  },
-  getById: async (id) => {
-    const { data, error } = await table
-      .select("*")
-      .eq("id", id)
-      .single<ResourceEntry>();
+      if (!data?.length || !count) {
+        return { data: [], count: 0, hasMore: false };
+      }
 
-    if (error) {
-      throw error;
-    }
+      return {
+        data,
+        count,
+        hasMore: isPaginating ? offset + limit < count : false,
+      };
+    },
+    getById: async (id) => {
+      const { data, error } = await table
+        .select("*")
+        .eq("id", id)
+        .single<ResourceEntry>();
 
-    return data;
-  },
-  create: async (values) => {
-    const { data, error } = await table
-      .insert(values)
-      .select()
-      .single<ResourceEntry>();
+      if (error) {
+        throw error;
+      }
 
-    if (error) {
-      throw error;
-    }
+      return data;
+    },
+    create: async (values) => {
+      const { data, error } = await table
+        .insert(values)
+        .select()
+        .single<ResourceEntry>();
 
-    return data;
-  },
-  updateById: async (id, values) => {
-    const { data, error } = await table
-      .update(values)
-      .eq("id", id)
-      .single<ResourceEntry>();
+      if (error) {
+        throw error;
+      }
 
-    if (error) {
-      throw error;
-    }
+      return data;
+    },
+    updateById: async (id, values) => {
+      const { data, error } = await table
+        .update(values)
+        .eq("id", id)
+        .single<ResourceEntry>();
 
-    return data;
-  },
-  delete: async (id) => {
-    const { error } = await table.delete().eq("id", id);
+      if (error) {
+        throw error;
+      }
 
-    if (error) {
-      throw error;
-    }
-  },
+      return data;
+    },
+    delete: async (id) => {
+      const { error } = await table.delete().eq("id", id);
+
+      if (error) {
+        throw error;
+      }
+    },
+  };
 };
 
-export default ResourceEntryAPI;
+export default getResourceEntryAPI;

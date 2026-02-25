@@ -2,7 +2,7 @@
 
 This is the admin dashboard for the [PHLASK](https://github.com/phlask/phlask-map/tree/develop) project. It provides a web interface for reviewing, editing, and managing community resource data using Supabase as the backend.
 
-### Key Features
+## Key Features
 
 - View and manage resources from the Supabase database
 - Review and approve/reject suggested edits to resources
@@ -26,6 +26,16 @@ Install dependencies with [pnpm](https://pnpm.io/installation):
 pnpm install
 ```
 
+### Environment Variables
+
+To run the app locally, you must create a `.env` file in the root directory with the variables defined in the `.env.example` file. You should duplicate this file and populate the missing fields with the API secrets.
+
+```bash
+cp .example.env .env
+```
+
+If any variables are reported as missing, message us in the `#phlask-data` channel on Slack (See [Code For Philly](https://codeforphilly.org/) for more details). Also, refer to the `.env.example` file for more details.
+
 ### Development
 
 Start the development server:
@@ -35,25 +45,6 @@ pnpm run dev
 ```
 
 Visit [http://localhost:5174](http://localhost:5174) or as output in the terminal from pnpm run dev to view the app.
-
-### Environment Variables
-
-To see the data & tables create a `.env` file in the root directory with the following variables:
-For reference, check and copy from the `.env.example` file.
-
-```bash
-cp .example.env .env
-```
-
-Your `.env` file should look like this:
-
-```env
-VITE_DB_NAME="resources"
-VITE_DB_URL="Check .example.env for the URL"
-VITE_DB_API_KEY="Message us in the #phlask-data channel on Slack"
-```
-
-Need access to the database? Message us in the [#phlask-data](https://codeforphilly.org/chat) channel on Slack. Also, refer to the `.env.example` file for more details.
 
 ### Docker
 
@@ -95,9 +86,9 @@ app/
 
 ## How to Contribute / Next Steps
 
-- Please refer to contributing guidelines [here](https://github.com/phlask/phlask-map?tab=readme-ov-file#want-to-add-something-new-or-developreport-a-fix-for-a-bug-you-found).
+- Please refer to the [contributing guidelines](https://github.com/phlask/phlask-map/blob/develop/contributing.md).
 
-- Please check our [https://github.com/phlask/admin-dashboard/issues](https://github.com/phlask/admin-dashboard/issues) for open issues and feature requests.
+- Please check our [GitHub issues](https://github.com/phlask/admin-dashboard/issues) for open issues and feature requests.
 
 - Before submitting a PR, please ensure that your code adheres to the project's coding standards and passes all tests. We recommend running the following command to check for linting errors and run tests:
 
