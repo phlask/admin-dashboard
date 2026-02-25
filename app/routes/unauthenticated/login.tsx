@@ -25,12 +25,11 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 const mutation = applySchema(loginSchema)(async (values) => values);
 
-export const action: ActionFunction = async ({ context, request, params }) => {
+export const action: ActionFunction = async ({ context, request }) => {
   const result = await performMutation({
     request,
     schema: loginSchema,
     mutation,
-    context: { request, context, params },
   });
 
   if (!result.success) {

@@ -34,7 +34,7 @@ To run the app locally, you must create a `.env` file in the root directory with
 cp .example.env .env
 ```
 
-Message us in the `#phlask-data` channel on Slack (See [Code For Philly](https://codeforphilly.org/) for more details) if any of these variables are missing. Also, refer to the `.env.example` file for more details.
+If any variables are reported as missing, message us in the `#phlask-data` channel on Slack (See [Code For Philly](https://codeforphilly.org/) for more details). Also, refer to the `.env.example` file for more details.
 
 ### Development
 
