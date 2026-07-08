@@ -1,3 +1,4 @@
+import { ArrowBack } from "@mui/icons-material";
 import {
   Alert,
   Autocomplete,
@@ -21,6 +22,7 @@ import {
   data,
   Form,
   type LoaderFunction,
+  Link as RouterLink,
   redirect,
   useActionData,
   useFetcher,
@@ -44,6 +46,7 @@ import type {
   WaterTag,
 } from "~/types/ResourceEntry";
 import type { ResourceRevision } from "~/types/ResourceRevision";
+import { statusChipColor } from "~/utils/chipColors";
 
 export const middleware = [authMiddleware];
 
@@ -298,12 +301,44 @@ const ReviewDetail = () => {
 
   return (
     <Stack gap={3}>
+      <Box
+        sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          mx: -4,
+          px: 4,
+          py: 1,
+          mt: -1,
+          bgcolor: "background.default",
+        }}
+      >
+        <Typography
+          component={RouterLink}
+          to="/reviews"
+          color="text.secondary"
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.5,
+            textDecoration: "none",
+            "&:hover": { color: "primary.main" },
+          }}
+        >
+          <ArrowBack fontSize="small" />
+          Back to review queue
+        </Typography>
+      </Box>
       <Box>
         <Typography variant="h5" fontWeight={600} gutterBottom>
           Review proposed edit
         </Typography>
         <Stack direction="row" gap={1} alignItems="center">
-          <Chip label={revision.status} size="small" color="warning" />
+          <Chip
+            label={revision.status}
+            size="small"
+            color={statusChipColor(revision.status)}
+          />
           <Typography variant="body2" color="text.secondary">
             Submitted{" "}
             {new Date(revision.date_created).toLocaleString(undefined, {

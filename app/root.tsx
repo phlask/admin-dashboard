@@ -9,6 +9,20 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { ThemeModeProvider } from "./theme/ThemeModeProvider";
+
+// Runs before hydration to apply the persisted theme as a class on <html>,
+// so the very first paint is already in the right mode. Defaults to light
+// unless the user has previously chosen dark mode (no OS-preference fallback).
+const THEME_INIT_SCRIPT = `
+(function () {
+  try {
+    if (localStorage.getItem("phlask-theme-mode") === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+  } catch (e) {}
+})();
+`;
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -31,6 +45,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static inline script, no user input */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
         {children}
@@ -42,7 +58,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <ThemeModeProvider>
+      <Outlet />
+    </ThemeModeProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

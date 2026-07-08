@@ -23,6 +23,10 @@ import { getDatabaseClient } from "~/api/client.server";
 import { getResourceRevisionAPI } from "~/api/resource-revisions/methods";
 import { authMiddleware } from "~/middleware/auth";
 import type { ResourceRevision } from "~/types/ResourceRevision";
+import {
+  resourceTypeChipColor,
+  resourceTypeChipIcon,
+} from "~/utils/chipColors";
 
 export const middleware = [authMiddleware];
 
@@ -66,7 +70,14 @@ const columns: ColumnDef<RowData>[] = [
   {
     accessorKey: "resource_type",
     header: "Type",
-    cell: ({ row }) => <Chip label={row.original.resource_type} size="small" />,
+    cell: ({ row }) => (
+      <Chip
+        label={row.original.resource_type}
+        size="small"
+        icon={resourceTypeChipIcon(row.original.resource_type)}
+        color={resourceTypeChipColor(row.original.resource_type)}
+      />
+    ),
   },
   {
     accessorKey: "resourceLabel",

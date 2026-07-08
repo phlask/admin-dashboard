@@ -1,3 +1,4 @@
+import { HourglassTop, PendingActions, WaterDrop } from "@mui/icons-material";
 import {
   Box,
   Chip,
@@ -17,6 +18,10 @@ import { getDatabaseClient } from "~/api/client.server";
 import { getResourceRevisionAPI } from "~/api/resource-revisions/methods";
 import { authMiddleware } from "~/middleware/auth";
 import type { ResourceType } from "~/types/ResourceEntry";
+import {
+  resourceTypeChipColor,
+  resourceTypeChipIcon,
+} from "~/utils/chipColors";
 
 export const middleware = [authMiddleware];
 
@@ -72,17 +77,46 @@ type LoaderData = {
 const StatCard = ({
   label,
   value,
+  icon,
 }: {
   label: string;
   value: string | number;
+  icon: React.ReactNode;
 }) => (
-  <Paper variant="outlined" sx={{ p: 2.5, flex: 1, minWidth: 200 }}>
-    <Typography variant="body2" color="text.secondary">
-      {label}
-    </Typography>
-    <Typography variant="h4" fontWeight={700}>
-      {value}
-    </Typography>
+  <Paper
+    variant="outlined"
+    sx={{
+      p: 2.5,
+      flex: 1,
+      minWidth: 200,
+      display: "flex",
+      alignItems: "center",
+      gap: 2,
+    }}
+  >
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 48,
+        height: 48,
+        borderRadius: "14px",
+        background: "linear-gradient(135deg, #38c1ff, #0090de)",
+        color: "#fff",
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+    </Box>
+    <Box>
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="h4" fontWeight={700}>
+        {value}
+      </Typography>
+    </Box>
   </Paper>
 );
 
@@ -102,22 +136,38 @@ const Dashboard = () => {
       </Box>
 
       <Stack direction="row" gap={2} flexWrap="wrap">
-        <StatCard label="Pending reviews" value={pendingCount} />
-        <StatCard label="Total submissions" value={totalRevisions} />
+        <StatCard
+          label="Pending reviews"
+          value={pendingCount}
+          icon={<PendingActions fontSize="small" />}
+        />
+        <StatCard
+          label="Total submissions"
+          value={totalRevisions}
+          icon={<HourglassTop fontSize="small" />}
+        />
       </Stack>
 
       <Stack direction={{ xs: "column", md: "row" }} gap={3}>
         <Paper variant="outlined" sx={{ p: 2.5, flex: 1 }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Outstanding by resource type
-          </Typography>
+          <Stack direction="row" alignItems="center" gap={0.75} mb={1}>
+            <WaterDrop fontSize="small" color="primary" />
+            <Typography variant="subtitle1" fontWeight={600}>
+              Outstanding by resource type
+            </Typography>
+          </Stack>
           <TableContainer>
             <Table size="small">
               <TableBody>
                 {outstanding.map(({ type, count }) => (
                   <TableRow key={type}>
                     <TableCell>
-                      <Chip label={type} size="small" />
+                      <Chip
+                        label={type}
+                        size="small"
+                        icon={resourceTypeChipIcon(type)}
+                        color={resourceTypeChipColor(type)}
+                      />
                     </TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600 }}>
                       {count}
@@ -164,7 +214,10 @@ const Dashboard = () => {
           )}
         </Paper>
 
-        <Paper variant="outlined" sx={{ p: 2.5, flex: 1, bgcolor: "grey.50" }}>
+        <Paper
+          variant="outlined"
+          sx={{ p: 2.5, flex: 1, bgcolor: "action.hover" }}
+        >
           <Tooltip title="resource_revisions has no reviewed_by column yet, so there's no record of who approved/rejected a given submission. Add that column (and set it in the approve/reject action) to unlock this.">
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
               Top approvers
