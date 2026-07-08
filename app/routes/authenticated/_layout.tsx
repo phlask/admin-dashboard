@@ -29,6 +29,18 @@ export default function DashboardLayout() {
             >
               Dashboard
             </NavLink>
+            <NavLink
+              to="/reviews"
+              className={({ isActive }) =>
+                `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`
+              }
+            >
+              Reviews
+            </NavLink>
           </ul>
 
           <Link
