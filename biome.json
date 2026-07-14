@@ -25,7 +25,8 @@
     "enabled": true,
     "rules": {
       "recommended": true
-    }
+    },
+    "includes": ["**", "!app/assets/**"]
   },
   "css": {
     "assist": {
