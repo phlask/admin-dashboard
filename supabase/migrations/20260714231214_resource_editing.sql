@@ -140,10 +140,26 @@ security definer
 set search_path = public
 as $$
 declare
-  s public.resources;
-  r public.resources;
+  cur jsonb;
+  s   public.resources;
+  r   public.resources;
 begin
-  s := jsonb_populate_record(null::public.resources, p_payload);
+  select to_jsonb(t) into cur from public.resources t where t.id = p_id;
+  if cur is null then
+    raise exception 'resource % not found', p_id;
+  end if;
+
+  -- Overlay the suggested changes onto the current row so fields the edit does
+  -- not mention are preserved, and never let an edit change id / date_created /
+  -- creator (server-managed / immutable).
+  s := jsonb_populate_record(
+         null::public.resources,
+         cur || p_payload || jsonb_build_object(
+           'id',           cur -> 'id',
+           'date_created', cur -> 'date_created',
+           'creator',      cur -> 'creator'
+         )
+       );
 
   update public.resources t set
     date_created  = s.date_created,
