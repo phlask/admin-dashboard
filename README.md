@@ -4,10 +4,12 @@ This is the admin dashboard for the [PHLASK](https://github.com/phlask/phlask-ma
 
 ## Key Features
 
+- Authenticate via Supabase (login, password reset, email confirmation)
 - View and manage resources from the Supabase database
 - Review and approve/reject suggested edits to resources
 - View and resolve reports on resources
 - View resource changelogs and roll back changes if needed
+- Light/dark theme support
 
 ## Getting Started
 
@@ -65,23 +67,46 @@ Replace 3000:3000 with the actual port your application listens on if it is diff
 app/
 ├── api/
 │   ├── resources/
-│   │   └── methods.ts      # API methods related to resources
-│   ├── client.ts           # API client setup
-│   └── types.ts            # Shared API request/response types
+│   │   └── methods.ts             # API methods related to resources
+│   ├── resource-revisions/
+│   │   └── methods.ts             # API methods related to resource revisions/changelogs
+│   ├── client.server.ts           # Supabase client setup (server-side)
+│   └── types.ts                   # Shared API request/response types
 ├── assets/
-│   └── PHILASK_v2.svg      # Static assets (logos, images, etc.)
+│   └── PHILASK_v2.svg             # Static assets (logos, images, etc.)
+├── components/
+│   ├── ThemeToggle.tsx            # Light/dark theme toggle control
+│   └── WaveDivider.tsx            # Decorative UI component
 ├── constants/
-│   └── db.ts               # Database-related constants/config
+│   └── db.ts                      # Database-related constants/config
+├── context/
+│   └── user.ts                    # Authenticated user context
+├── middleware/
+│   └── auth.ts                    # Route authentication middleware
 ├── routes/
-│   ├── _layout.tsx         # Shared layout for route pages
-│   ├── dashboard.tsx       # Dashboard page component
+│   ├── authenticated/             # Routes that require a logged-in user
+│   │   ├── reviews/                # Review & approve/reject suggested edits
+│   │   ├── _layout.tsx
+│   │   ├── dashboard.tsx
+│   │   └── logout.tsx
+│   ├── unauthenticated/           # Public auth routes (login, password reset, etc.)
+│   │   ├── _layout.tsx
+│   │   ├── login.tsx
+│   │   ├── forgot-password.tsx
+│   │   ├── reset-password.tsx
+│   │   └── confirm.tsx
+├── schemas/
+│   └── *.ts                       # Zod schemas for auth forms
+├── theme/
+│   ├── theme.ts                   # MUI theme configuration
+│   └── ThemeModeProvider.tsx      # Light/dark theme context provider
 ├── types/
-│   └── ResourceEntry.ts    # Domain-specific TypeScript types
+│   └── ResourceEntry.ts           # Domain-specific TypeScript types
 ├── utils/
-│   └── distance.ts         # Distance calculation utilities
-├── app.css                 # Global application styles
-├── root.tsx                # App root component / Entry point
-└── routes.ts               # Route definitions and router configuration
+│   └── distance.ts                # Distance calculation utilities
+├── app.css                        # Global application styles
+├── root.tsx                       # App root component / Entry point
+└── routes.ts                      # Route definitions and router configuration
 ```
 
 ## How to Contribute / Next Steps
