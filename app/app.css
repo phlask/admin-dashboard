@@ -1,38 +1,30 @@
-@import 'tailwindcss';
-
 /* Dark mode is toggled by adding/removing `.dark` on <html> (see ThemeModeProvider),
    rather than following the OS preference, so it can stay in sync with the MUI theme. */
-@custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --font-sans:
-    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-
-  /* Water/brand blue, anchored on the PHLASK logo color (#10B6FF = brand-500) */
+:root {
+  /* Water/brand blue, anchored on the PHLASK logo color (#10B6FF = brand-500).
+     Mirrored in app/theme/theme.ts (kept in sync manually). */
   --color-brand-50: #eafaff;
   --color-brand-100: #d6f4ff;
-  --color-brand-200: #ade8ff;
   --color-brand-300: #6fd6ff;
-  --color-brand-400: #38c1ff;
-  --color-brand-500: #10b6ff;
-  --color-brand-600: #0090de;
-  --color-brand-700: #0072b3;
-  --color-brand-800: #045c90;
-  --color-brand-900: #0a3a5c;
 
   /* Deep ocean navy, used for dark-mode surfaces */
   --color-navy-950: #071522;
   --color-navy-900: #0a1929;
-  --color-navy-800: #10263a;
-  --color-navy-700: #17344c;
   --color-navy-600: #1f4560;
 }
 
 html,
 body {
-  @apply bg-brand-50 text-navy-900 dark:bg-navy-950 dark:text-brand-50;
+  background-color: var(--color-brand-50);
+  color: var(--color-navy-900);
   color-scheme: light;
+}
+
+html.dark,
+html.dark body {
+  background-color: var(--color-navy-950);
+  color: var(--color-brand-50);
 }
 
 html.dark {
