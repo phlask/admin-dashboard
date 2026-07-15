@@ -1,8 +1,10 @@
+import { Box } from "@mui/material";
 import { Outlet } from "react-router";
 
 import phlasklogo from "~/assets/PHLASK_v2.svg";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { WaveDivider } from "~/components/WaveDivider";
+import { brand, navy } from "~/theme/theme";
 
 const BUBBLES = [
   { left: "8%", size: 14, delay: 0, duration: 9 },
@@ -15,16 +17,40 @@ const BUBBLES = [
 
 export default function UnauthenticatedLayout() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-brand-100 via-brand-300 to-brand-600 px-4 py-12 dark:from-navy-950 dark:via-navy-900 dark:to-navy-800">
-      <div className="absolute top-4 right-4 z-20">
+    <Box
+      sx={(theme) => ({
+        position: "relative",
+        display: "flex",
+        minHeight: "100vh",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        px: 2,
+        py: 6,
+        backgroundImage: `linear-gradient(to bottom, ${brand[100]}, ${brand[300]}, ${brand[600]})`,
+        ...theme.applyStyles("dark", {
+          backgroundImage: `linear-gradient(to bottom, ${navy[950]}, ${navy[900]}, ${navy[800]})`,
+        }),
+      })}
+    >
+      <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 20 }}>
         <ThemeToggle />
-      </div>
+      </Box>
 
       {BUBBLES.map((bubble) => (
-        <span
+        <Box
           key={bubble.left}
           aria-hidden
-          className="pointer-events-none absolute bottom-0 rounded-full bg-white/40 dark:bg-brand-200/20"
+          sx={(theme) => ({
+            pointerEvents: "none",
+            position: "absolute",
+            bottom: 0,
+            borderRadius: "9999px",
+            bgcolor: "rgba(255,255,255,0.4)",
+            ...theme.applyStyles("dark", {
+              bgcolor: `${brand[200]}33`,
+            }),
+          })}
           style={{
             left: bubble.left,
             width: bubble.size,
@@ -40,7 +66,10 @@ export default function UnauthenticatedLayout() {
         height={140}
         opacity={0.35}
         duration={26}
-        className="bottom-0 dark:opacity-20"
+        sx={(theme) => ({
+          bottom: 0,
+          ...theme.applyStyles("dark", { opacity: 0.2 }),
+        })}
       />
       <WaveDivider
         color="var(--color-brand-500)"
@@ -48,26 +77,57 @@ export default function UnauthenticatedLayout() {
         opacity={0.45}
         duration={20}
         reverse
-        className="bottom-0 dark:opacity-25"
+        sx={(theme) => ({
+          bottom: 0,
+          ...theme.applyStyles("dark", { opacity: 0.25 }),
+        })}
       />
       <WaveDivider
         color="var(--color-brand-700)"
         height={60}
         opacity={0.55}
         duration={15}
-        className="bottom-0 dark:opacity-30"
+        sx={(theme) => ({
+          bottom: 0,
+          ...theme.applyStyles("dark", { opacity: 0.3 }),
+        })}
       />
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="mb-8 flex justify-center">
-          <div className="inline-flex rounded-2xl bg-white/80 p-3 shadow-md backdrop-blur-sm dark:bg-navy-950/60">
-            <img src={phlasklogo} alt="PHLASK Logo" className="h-9" />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-white/50 bg-white/75 p-8 shadow-xl backdrop-blur-md dark:border-navy-700/60 dark:bg-navy-900/75">
+      <Box
+        sx={{ position: "relative", zIndex: 10, width: "100%", maxWidth: 448 }}
+      >
+        <Box sx={{ mb: 4, display: "flex", justifyContent: "center" }}>
+          <Box
+            sx={(theme) => ({
+              display: "inline-flex",
+              borderRadius: 4,
+              bgcolor: "rgba(255,255,255,0.8)",
+              p: 1.5,
+              boxShadow: 2,
+              backdropFilter: "blur(4px)",
+              ...theme.applyStyles("dark", { bgcolor: `${navy[950]}99` }),
+            })}
+          >
+            <img src={phlasklogo} alt="PHLASK Logo" style={{ height: 36 }} />
+          </Box>
+        </Box>
+        <Box
+          sx={(theme) => ({
+            borderRadius: 4,
+            border: "1px solid rgba(255,255,255,0.5)",
+            bgcolor: "rgba(255,255,255,0.75)",
+            p: 4,
+            boxShadow: 8,
+            backdropFilter: "blur(8px)",
+            ...theme.applyStyles("dark", {
+              borderColor: `${navy[700]}99`,
+              bgcolor: `${navy[900]}bf`,
+            }),
+          })}
+        >
           <Outlet />
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }
