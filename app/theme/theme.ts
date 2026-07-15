@@ -131,3 +131,5 @@ export const theme: Theme = createTheme({
 });
 
 export type ThemeMode = "light" | "dark";
+
+export const THEME_COOKIE_NAME = "phlask-theme-mode";

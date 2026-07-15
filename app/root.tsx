@@ -5,24 +5,21 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
+  useRouteLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 import { ThemeModeProvider } from "./theme/ThemeModeProvider";
+import { getThemeMode } from "./theme/theme-cookie.server";
 
-// Runs before hydration to apply the persisted theme as a class on <html>,
-// so the very first paint is already in the right mode. Defaults to light
-// unless the user has previously chosen dark mode (no OS-preference fallback).
-const THEME_INIT_SCRIPT = `
-(function () {
-  try {
-    if (localStorage.getItem("phlask-theme-mode") === "dark") {
-      document.documentElement.classList.add("dark");
-    }
-  } catch (e) {}
-})();
-`;
+// The theme cookie (see theme-cookie.server.ts) lets the server render the
+// right `dark` class on <html> up front, so there's no flash of the wrong
+// theme and no need for a blocking inline script before hydration.
+export function loader({ request }: Route.LoaderArgs) {
+  return { themeMode: getThemeMode(request) };
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -38,15 +35,17 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  // useRouteLoaderData (not useLoaderData) because Layout also renders the
+  // ErrorBoundary path, where the root loader may not have run.
+  const themeMode = useRouteLoaderData<typeof loader>("root")?.themeMode;
+
   return (
-    <html lang="en">
+    <html lang="en" className={themeMode === "dark" ? "dark" : undefined}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static inline script, no user input */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
         {children}
@@ -58,8 +57,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const { themeMode } = useLoaderData<typeof loader>();
+
   return (
-    <ThemeModeProvider>
+    <ThemeModeProvider initialMode={themeMode}>
       <Outlet />
     </ThemeModeProvider>
   );

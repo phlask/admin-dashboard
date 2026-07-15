@@ -8,18 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { type ThemeMode, theme } from "./theme";
-
-export const THEME_STORAGE_KEY = "phlask-theme-mode";
-
-// Runs before hydration (see the inline <script> in root.tsx) so this initial
-// read already reflects the right class — keeps SSR and first client render
-// in sync and avoids a flash of the wrong theme.
-const getInitialMode = (): ThemeMode =>
-  typeof document !== "undefined" &&
-  document.documentElement.classList.contains("dark")
-    ? "dark"
-    : "light";
+import { THEME_COOKIE_NAME, type ThemeMode, theme } from "./theme";
 
 type ThemeModeContextValue = {
   mode: ThemeMode;
@@ -28,12 +17,22 @@ type ThemeModeContextValue = {
 
 const ThemeModeContext = createContext<ThemeModeContextValue | null>(null);
 
-export function ThemeModeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<ThemeMode>(getInitialMode);
+export function ThemeModeProvider({
+  children,
+  initialMode,
+}: {
+  children: ReactNode;
+  initialMode: ThemeMode;
+}) {
+  const [mode, setMode] = useState<ThemeMode>(initialMode);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", mode === "dark");
-    window.localStorage.setItem(THEME_STORAGE_KEY, mode);
+    // One year, readable by the root loader on the next request so SSR
+    // renders the right theme with no flash. Not httpOnly: it's a UI
+    // preference, not a secret, and needs to be writable from here.
+    // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API isn't supported in Safari/Firefox yet
+    document.cookie = `${THEME_COOKIE_NAME}=${mode}; path=/; max-age=31536000; samesite=lax`;
   }, [mode]);
 
   const value = useMemo<ThemeModeContextValue>(
