@@ -62,7 +62,7 @@ export default function UnauthenticatedLayout() {
       ))}
 
       <WaveDivider
-        color="var(--color-brand-400)"
+        color={brand[400]}
         height={140}
         opacity={0.35}
         duration={26}
@@ -72,7 +72,7 @@ export default function UnauthenticatedLayout() {
         })}
       />
       <WaveDivider
-        color="var(--color-brand-500)"
+        color={brand[500]}
         height={100}
         opacity={0.45}
         duration={20}
@@ -83,7 +83,7 @@ export default function UnauthenticatedLayout() {
         })}
       />
       <WaveDivider
-        color="var(--color-brand-700)"
+        color={brand[700]}
         height={60}
         opacity={0.55}
         duration={15}
