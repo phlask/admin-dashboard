@@ -4,8 +4,8 @@ import { useThemeMode } from "~/theme/ThemeModeProvider";
 import { brand, navy } from "~/theme/theme";
 
 // Styling and icon visibility are driven purely by the `.dark` class (via
-// theme.applyStyles / Tailwind's dark: variant) rather than the `mode` value
-// from React state, so this can never mismatch between SSR and hydration.
+// theme.applyStyles) rather than the `mode` value from React state, so this
+// can never mismatch between SSR and hydration.
 export function ThemeToggle() {
   const { toggleMode } = useThemeMode();
 
@@ -26,8 +26,19 @@ export function ThemeToggle() {
           }),
         })}
       >
-        <LightMode fontSize="small" className="dark:hidden" />
-        <DarkMode fontSize="small" className="hidden dark:inline-block" />
+        <LightMode
+          fontSize="small"
+          sx={(theme) => ({
+            ...theme.applyStyles("dark", { display: "none" }),
+          })}
+        />
+        <DarkMode
+          fontSize="small"
+          sx={(theme) => ({
+            display: "none",
+            ...theme.applyStyles("dark", { display: "inline-block" }),
+          })}
+        />
       </IconButton>
     </Tooltip>
   );

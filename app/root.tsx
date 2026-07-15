@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import {
   isRouteErrorResponse,
   Links,
@@ -82,14 +83,17 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
+    <Box
+      component="main"
+      sx={{ pt: 8, p: 2, maxWidth: "lg", mx: "auto", width: "100%" }}
+    >
       <h1>{message}</h1>
       <p>{details}</p>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <Box component="pre" sx={{ width: "100%", p: 2, overflowX: "auto" }}>
           <code>{stack}</code>
-        </pre>
+        </Box>
       )}
-    </main>
+    </Box>
   );
 }

@@ -1,23 +1,49 @@
+import { Box } from "@mui/material";
 import { Outlet } from "react-router";
 
 import phlasklogo from "~/assets/PHLASK_v2.svg";
 
 export default function UnauthenticatedLayout() {
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900">
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-100">
-          <h1 className="text-xl font-bold text-blue-600 tracking-tight">
+    <Box
+      sx={{
+        display: "flex",
+        height: "100vh",
+        bgcolor: "#f9fafb",
+        color: "#111827",
+      }}
+    >
+      <Box
+        component="aside"
+        sx={{
+          display: "flex",
+          width: 256,
+          flexDirection: "column",
+          bgcolor: "#ffffff",
+          borderRight: "1px solid #e5e7eb",
+        }}
+      >
+        <Box sx={{ p: 3, borderBottom: "1px solid #f3f4f6" }}>
+          <Box
+            component="h1"
+            sx={{
+              m: 0,
+              fontSize: "1.25rem",
+              fontWeight: 700,
+              color: "#2563eb",
+              letterSpacing: "-0.025em",
+            }}
+          >
             <img src={phlasklogo} alt="PHLASK Logo" />
-          </h1>
-        </div>
-      </aside>
+          </Box>
+        </Box>
+      </Box>
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">
+      <Box component="main" sx={{ flex: 1, overflow: "auto" }}>
+        <Box sx={{ p: 4 }}>
           <Outlet />
-        </div>
-      </main>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }
