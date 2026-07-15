@@ -1,3 +1,5 @@
+import { Box, type SxProps, type Theme } from "@mui/material";
+
 // Two periods of the same wave back-to-back so a -50% translateX loops seamlessly.
 const WAVE_PATH =
   "M0,40 C150,90 350,0 600,40 C850,80 1050,0 1200,40 C1350,80 1550,0 1800,40 C1950,80 2150,0 2400,40 L2400,120 L0,120 Z";
@@ -8,7 +10,7 @@ type WaveDividerProps = {
   opacity?: number;
   duration?: number;
   reverse?: boolean;
-  className?: string;
+  sx?: SxProps<Theme>;
 };
 
 export function WaveDivider({
@@ -17,27 +19,41 @@ export function WaveDivider({
   opacity = 1,
   duration = 18,
   reverse = false,
-  className,
+  sx,
 }: WaveDividerProps) {
   return (
-    <div
+    <Box
       aria-hidden
-      className={`pointer-events-none absolute inset-x-0 overflow-hidden leading-none ${className ?? ""}`}
-      style={{ height }}
+      sx={[
+        {
+          pointerEvents: "none",
+          position: "absolute",
+          insetInline: 0,
+          overflow: "hidden",
+          lineHeight: 0,
+          height,
+        },
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
     >
-      <svg
+      <Box
+        component="svg"
         aria-hidden="true"
         viewBox="0 0 2400 120"
         preserveAspectRatio="none"
-        className="absolute inset-y-0 left-0 h-full w-[200%]"
-        style={{
+        sx={{
+          position: "absolute",
+          insetBlock: 0,
+          left: 0,
+          height: "100%",
+          width: "200%",
           animation: `wave-drift ${duration}s linear infinite`,
           animationDirection: reverse ? "reverse" : "normal",
           opacity,
         }}
       >
         <path d={WAVE_PATH} fill={color} />
-      </svg>
-    </div>
+      </Box>
+    </Box>
   );
 }
