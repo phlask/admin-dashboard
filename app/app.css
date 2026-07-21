@@ -1,16 +1,105 @@
-@import 'tailwindcss';
+/* Dark mode is toggled by adding/removing `.dark` on <html> (see ThemeModeProvider),
+   rather than following the OS preference, so it can stay in sync with the MUI theme. */
 
-@theme {
-  --font-sans:
-    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+:root {
+  /* Water/brand blue, anchored on the PHLASK logo color (#10B6FF = brand-500).
+     Mirrored in app/theme/theme.ts (kept in sync manually). */
+  --color-brand-50: #eafaff;
+  --color-brand-100: #d6f4ff;
+  --color-brand-300: #6fd6ff;
+
+  /* Deep ocean navy, used for dark-mode surfaces */
+  --color-navy-950: #071522;
+  --color-navy-900: #0a1929;
+  --color-navy-600: #1f4560;
 }
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+  background-color: var(--color-brand-50);
+  color: var(--color-navy-900);
+  color-scheme: light;
+}
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+html.dark,
+html.dark body {
+  background-color: var(--color-navy-950);
+  color: var(--color-brand-50);
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+@keyframes wave-drift {
+  from {
+    transform: translateX(0);
   }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes bubble-rise {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(-140px) scale(1.15);
+    opacity: 0;
+  }
+}
+
+/* Ambient per-type motion for resource-type chip icons (see chipColors.tsx) */
+@keyframes chip-icon-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes chip-icon-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+}
+
+@keyframes chip-icon-sway {
+  0%,
+  100% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+}
+
+@keyframes chip-icon-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(12deg);
+  }
+}
+
+/* Water-themed scrollbar */
+* {
+  scrollbar-color: var(--color-brand-300) transparent;
+}
+
+html.dark * {
+  scrollbar-color: var(--color-navy-600) transparent;
 }
