@@ -12,5 +12,8 @@ export default [
   ]),
   route("auth", "routes/unauthenticated/_layout.tsx", [
     index("routes/unauthenticated/login.tsx"),
+    route("forgot-password", "routes/unauthenticated/forgot-password.tsx"),
+    route("confirm", "routes/unauthenticated/confirm.tsx"),
+    route("reset-password", "routes/unauthenticated/reset-password.tsx"),
   ]),
 ] satisfies RouteConfig;
