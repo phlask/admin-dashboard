@@ -1,50 +1,106 @@
+import { Box } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import { Link, NavLink, Outlet } from "react-router";
 
 import phlasklogo from "~/assets/PHLASK_v2.svg";
 
 export const action = () => {};
 
+const SidebarNavLink = styled(NavLink)({
+  display: "block",
+  borderRadius: 8,
+  paddingInline: 16,
+  paddingBlock: 10,
+  fontSize: "0.875rem",
+  fontWeight: 500,
+  textDecoration: "none",
+  color: "#4b5563",
+  transition: "background-color 0.2s ease, color 0.2s ease",
+  "&:hover": { backgroundColor: "#f3f4f6" },
+  "&.active": {
+    color: "#1d4ed8",
+    backgroundColor: "#eff6ff",
+  },
+});
+
 export default function DashboardLayout() {
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900">
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-100">
-          <h1 className="text-xl font-bold text-blue-600 tracking-tight">
+    <Box
+      sx={{
+        display: "flex",
+        height: "100vh",
+        bgcolor: "#f9fafb",
+        color: "#111827",
+      }}
+    >
+      <Box
+        component="aside"
+        sx={{
+          display: "flex",
+          width: 256,
+          flexDirection: "column",
+          bgcolor: "#ffffff",
+          borderRight: "1px solid #e5e7eb",
+        }}
+      >
+        <Box sx={{ p: 3, borderBottom: "1px solid #f3f4f6" }}>
+          <Box
+            component="h1"
+            sx={{
+              m: 0,
+              fontSize: "1.25rem",
+              fontWeight: 700,
+              color: "#2563eb",
+              letterSpacing: "-0.025em",
+            }}
+          >
             <img src={phlasklogo} alt="PHLASK Logo" />
-          </h1>
-        </div>
+          </Box>
+        </Box>
 
-        <nav className="flex flex-col justify-between flex-1 p-4 space-y-1">
-          <ul>
-            <NavLink
-              to="/"
-              end
-              className={({ isActive }) =>
-                `block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`
-              }
-            >
+        <Box
+          component="nav"
+          sx={{
+            display: "flex",
+            flex: 1,
+            flexDirection: "column",
+            justifyContent: "space-between",
+            p: 2,
+            gap: 0.5,
+          }}
+        >
+          <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
+            <SidebarNavLink to="/" end>
               Dashboard
-            </NavLink>
-          </ul>
+            </SidebarNavLink>
+          </Box>
 
-          <Link
+          <Box
+            component={Link}
             to="/logout"
-            className="block px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
+            sx={{
+              display: "block",
+              borderRadius: 2,
+              px: 2,
+              py: 1.25,
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              textDecoration: "none",
+              color: "inherit",
+              transition: "background-color 0.2s ease",
+              "&:hover": { bgcolor: "#f3f4f6" },
+            }}
           >
             Logout
-          </Link>
-        </nav>
-      </aside>
+          </Box>
+        </Box>
+      </Box>
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">
+      <Box component="main" sx={{ flex: 1, overflow: "auto" }}>
+        <Box sx={{ p: 4 }}>
           <Outlet />
-        </div>
-      </main>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }
