@@ -1,61 +1,111 @@
+import { Dashboard, Logout, RateReview } from "@mui/icons-material";
 import { Box } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Link, NavLink, Outlet } from "react-router";
-
 import phlasklogo from "~/assets/PHLASK_v2.svg";
+import { ThemeToggle } from "~/components/ThemeToggle";
+import { WaveDivider } from "~/components/WaveDivider";
+import { brand, navy } from "~/theme/theme";
 
 export const action = () => {};
 
-const SidebarNavLink = styled(NavLink)({
-  display: "block",
-  borderRadius: 8,
-  paddingInline: 16,
-  paddingBlock: 10,
+const SidebarNavLink = styled(NavLink)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: theme.spacing(1.25),
+  borderRadius: 12,
+  padding: `${theme.spacing(1.25)} ${theme.spacing(2)}`,
   fontSize: "0.875rem",
   fontWeight: 500,
   textDecoration: "none",
-  color: "#4b5563",
-  transition: "background-color 0.2s ease, color 0.2s ease",
-  "&:hover": { backgroundColor: "#f3f4f6" },
+  color: navy[600],
+  transition: "color 0.2s ease, background-color 0.2s ease",
+  "&:hover": { backgroundColor: brand[50] },
   "&.active": {
-    color: "#1d4ed8",
-    backgroundColor: "#eff6ff",
+    color: brand[700],
+    backgroundColor: brand[50],
   },
-});
+  ...theme.applyStyles("dark", {
+    color: `${brand[100]}cc`,
+    "&:hover": { backgroundColor: navy[800] },
+    "&.active": {
+      color: brand[300],
+      backgroundColor: navy[800],
+    },
+  }),
+}));
 
 export default function DashboardLayout() {
   return (
     <Box
-      sx={{
+      sx={(theme) => ({
         display: "flex",
         height: "100vh",
-        bgcolor: "#f9fafb",
-        color: "#111827",
-      }}
+        bgcolor: brand[50],
+        color: navy[900],
+        ...theme.applyStyles("dark", { bgcolor: navy[950], color: brand[50] }),
+      })}
     >
       <Box
         component="aside"
-        sx={{
+        sx={(theme) => ({
           display: "flex",
           width: 256,
           flexDirection: "column",
           bgcolor: "#ffffff",
-          borderRight: "1px solid #e5e7eb",
-        }}
+          ...theme.applyStyles("dark", { bgcolor: navy[900] }),
+        })}
       >
-        <Box sx={{ p: 3, borderBottom: "1px solid #f3f4f6" }}>
+        <Box
+          sx={(theme) => ({
+            position: "relative",
+            overflow: "hidden",
+            backgroundImage: `linear-gradient(to bottom right, ${brand[400]}, ${brand[600]})`,
+            pt: 3,
+            pb: 4.5,
+            pl: 3,
+            ...theme.applyStyles("dark", {
+              backgroundImage: `linear-gradient(to bottom right, ${navy[600]}, ${navy[800]})`,
+            }),
+          })}
+        >
           <Box
-            component="h1"
+            sx={(theme) => ({
+              display: "inline-flex",
+              borderRadius: 3,
+              bgcolor: "rgba(255,255,255,0.9)",
+              p: 1,
+              boxShadow: 1,
+              ...theme.applyStyles("dark", { bgcolor: `${navy[950]}b3` }),
+            })}
+          >
+            <img
+              src={phlasklogo}
+              alt="PHLASK Logo"
+              style={{ height: 24, width: "auto" }}
+            />
+          </Box>
+          <Box
+            component="p"
             sx={{
-              m: 0,
-              fontSize: "1.25rem",
-              fontWeight: 700,
-              color: "#2563eb",
-              letterSpacing: "-0.025em",
+              mt: 1,
+              fontSize: "0.75rem",
+              fontWeight: 500,
+              color: "rgba(255,255,255,0.8)",
             }}
           >
-            <img src={phlasklogo} alt="PHLASK Logo" />
+            Admin dashboard
           </Box>
+          <WaveDivider
+            color="currentColor"
+            height={22}
+            duration={22}
+            sx={(theme) => ({
+              bottom: 0,
+              color: "#ffffff",
+              ...theme.applyStyles("dark", { color: navy[900] }),
+            })}
+          />
         </Box>
 
         <Box
@@ -66,32 +116,83 @@ export default function DashboardLayout() {
             flexDirection: "column",
             justifyContent: "space-between",
             p: 2,
-            gap: 0.5,
           }}
         >
-          <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
-            <SidebarNavLink to="/" end>
-              Dashboard
-            </SidebarNavLink>
+          <Box
+            component="ul"
+            sx={{ listStyle: "none", m: 0, p: 0, "& > li + li": { mt: 0.5 } }}
+          >
+            <li>
+              <SidebarNavLink to="/" end>
+                <Dashboard fontSize="small" />
+                Dashboard
+              </SidebarNavLink>
+            </li>
+            <li>
+              <SidebarNavLink to="/reviews">
+                <RateReview fontSize="small" />
+                Reviews
+              </SidebarNavLink>
+            </li>
           </Box>
 
           <Box
-            component={Link}
-            to="/logout"
-            sx={{
-              display: "block",
-              borderRadius: 2,
-              px: 2,
-              py: 1.25,
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              textDecoration: "none",
-              color: "inherit",
-              transition: "background-color 0.2s ease",
-              "&:hover": { bgcolor: "#f3f4f6" },
-            }}
+            sx={(theme) => ({
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              borderTop: `1px solid ${brand[100]}`,
+              pt: 1.5,
+              ...theme.applyStyles("dark", { borderTopColor: navy[700] }),
+            })}
           >
-            Logout
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderRadius: 3,
+                px: 1.5,
+                py: 0.75,
+              }}
+            >
+              <Box
+                component="span"
+                sx={(theme) => ({
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  ...theme.applyStyles("dark", { color: `${brand[100]}b3` }),
+                })}
+              >
+                Theme
+              </Box>
+              <ThemeToggle />
+            </Box>
+            <Box
+              component={Link}
+              to="/logout"
+              sx={(theme) => ({
+                display: "flex",
+                alignItems: "center",
+                gap: 1.25,
+                borderRadius: 3,
+                px: 2,
+                py: 1.25,
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                textDecoration: "none",
+                color: navy[600],
+                transition: "background-color 0.2s ease",
+                "&:hover": { bgcolor: brand[50] },
+                ...theme.applyStyles("dark", {
+                  color: `${brand[100]}cc`,
+                  "&:hover": { bgcolor: navy[800] },
+                }),
+              })}
+            >
+              <Logout fontSize="small" />
+              Logout
+            </Box>
           </Box>
         </Box>
       </Box>
