@@ -1,3 +1,4 @@
+import { Box } from "@mui/material";
 import {
   isRouteErrorResponse,
   Links,
@@ -5,10 +6,20 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
+  useRouteLoaderData,
 } from "react-router";
-
 import type { Route } from "./+types/root";
 import "./app.css";
+import { ThemeModeProvider } from "./theme/ThemeModeProvider";
+import { getThemeMode } from "./theme/theme-cookie.server";
+
+// The theme cookie (see theme-cookie.server.ts) lets the server render the
+// right `dark` class on <html> up front, so there's no flash of the wrong
+// theme and no need for a blocking inline script before hydration.
+export function loader({ request }: Route.LoaderArgs) {
+  return { themeMode: getThemeMode(request) };
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -24,8 +35,12 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  // useRouteLoaderData (not useLoaderData) because Layout also renders the
+  // ErrorBoundary path, where the root loader may not have run.
+  const themeMode = useRouteLoaderData<typeof loader>("root")?.themeMode;
+
   return (
-    <html lang="en">
+    <html lang="en" className={themeMode === "dark" ? "dark" : undefined}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -42,7 +57,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  const { themeMode } = useLoaderData<typeof loader>();
+
+  return (
+    <ThemeModeProvider initialMode={themeMode}>
+      <Outlet />
+    </ThemeModeProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -62,14 +83,17 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
+    <Box
+      component="main"
+      sx={{ pt: 8, p: 2, maxWidth: "lg", mx: "auto", width: "100%" }}
+    >
       <h1>{message}</h1>
       <p>{details}</p>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <Box component="pre" sx={{ width: "100%", p: 2, overflowX: "auto" }}>
           <code>{stack}</code>
-        </pre>
+        </Box>
       )}
-    </main>
+    </Box>
   );
 }
