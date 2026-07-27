@@ -1,4 +1,4 @@
-import { Dashboard, Logout, RateReview } from "@mui/icons-material";
+import { Business, Dashboard, Logout, RateReview } from "@mui/icons-material";
 import { Box } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Link, NavLink, Outlet } from "react-router";
@@ -132,6 +132,12 @@ export default function DashboardLayout() {
               <SidebarNavLink to="/reviews">
                 <RateReview fontSize="small" />
                 Reviews
+              </SidebarNavLink>
+            </li>
+            <li>
+              <SidebarNavLink to="/providers">
+                <Business fontSize="small" />
+                Providers
               </SidebarNavLink>
             </li>
           </Box>
