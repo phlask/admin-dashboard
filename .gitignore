@@ -6,3 +6,6 @@
 /.react-router/
 /build/
 /docker/build/
+
+# Amplify build output
+/.amplify-hosting/
