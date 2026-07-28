@@ -122,6 +122,42 @@ export const action: ActionFunction = async ({ request }) => {
 
 type ActionResponse = { message: string; ok?: boolean };
 
+/**
+ * Provider logos are usually wide wordmarks, so they are scaled to fit rather
+ * than cropped into a square. Falls back to the initial if the logo is missing
+ * or fails to load, matching the map's "Provided By" behaviour.
+ */
+const ProviderLogo = ({ provider }: { provider: Provider }) => {
+  const [failed, setFailed] = useState(false);
+
+  if (!provider.logo_url || failed) {
+    return (
+      <Avatar
+        variant="rounded"
+        sx={{ width: 40, height: 40, bgcolor: "action.hover" }}
+      >
+        {provider.name.charAt(0).toUpperCase()}
+      </Avatar>
+    );
+  }
+
+  return (
+    <Box
+      component="img"
+      src={provider.logo_url}
+      alt={provider.name}
+      onError={() => setFailed(true)}
+      sx={{
+        height: 40,
+        maxWidth: 120,
+        objectFit: "contain",
+        objectPosition: "left center",
+        display: "block",
+      }}
+    />
+  );
+};
+
 const ProvidersPage = () => {
   const { providers, resourceCounts } = useLoaderData<{
     providers: Provider[];
@@ -208,14 +244,7 @@ const ProvidersPage = () => {
             {providers.map((provider) => (
               <TableRow key={provider.id} hover>
                 <TableCell>
-                  <Avatar
-                    src={provider.logo_url ?? undefined}
-                    alt={provider.name}
-                    variant="rounded"
-                    sx={{ width: 40, height: 40, bgcolor: "action.hover" }}
-                  >
-                    {provider.name.charAt(0).toUpperCase()}
-                  </Avatar>
+                  <ProviderLogo provider={provider} />
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" fontWeight={500}>
