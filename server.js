@@ -1,6 +1,15 @@
 import { createRequestHandler } from "@react-router/express";
 import express from "express";
 
+// Load env vars written by the Amplify build phase. Silently skipped
+// in environments where the file doesn't exist (e.g. local dev with
+// vars already in the shell).
+try {
+  process.loadEnvFile(".env");
+} catch {
+  // no-op
+}
+
 const app = express();
 
 app.disable("x-powered-by");
