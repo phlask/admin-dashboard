@@ -6,7 +6,7 @@ const app = express();
 app.disable("x-powered-by");
 
 app.all(
-  "*",
+  "*splat",
   createRequestHandler({ build: () => import("./build/server/index.js") }),
 );
 
