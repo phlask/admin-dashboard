@@ -5,7 +5,7 @@ export type ResourceEditReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type ResourceEdit = {
   id?: number;
   mapped_resource: number;
-  review_status?: ResourceEditReviewStatus;
+  review_status: ResourceEditReviewStatus;
   submitted_by?: string;
   submitted_at?: Date | string;
   reviewed_by?: string;

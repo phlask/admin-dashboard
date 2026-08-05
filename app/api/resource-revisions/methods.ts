@@ -14,7 +14,7 @@ export const getResourceRevisionAPI = (client: SupabaseClient) => {
       let query = table.select("*").order("date_created", { ascending: false });
 
       if (params.status) {
-        query = query.eq("status", params.status);
+        query = query.eq("review_status", params.status);
       }
 
       const { data, error } = await query;

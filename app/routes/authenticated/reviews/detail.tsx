@@ -335,9 +335,9 @@ const ReviewDetail = () => {
         </Typography>
         <Stack direction="row" gap={1} alignItems="center">
           <Chip
-            label={revision.status}
+            label={revision.review_status}
             size="small"
-            color={statusChipColor(revision.status)}
+            color={statusChipColor(revision.review_status)}
           />
           <Typography variant="body2" color="text.secondary">
             Submitted{" "}
