@@ -19,10 +19,10 @@ import {
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { type LoaderFunction, useLoaderData, useNavigate } from "react-router";
+import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { getDatabaseClient } from "~/api/client.server";
-import { getResourceRevisionAPI } from "~/api/resource-revisions/methods";
 import { authMiddleware } from "~/middleware/auth";
-import type { ResourceRevision } from "~/types/ResourceRevision";
+import type { ResourceEdit, ResourceEditQueueRow } from "~/types/ResourceEdit";
 import {
   resourceTypeChipColor,
   resourceTypeChipIcon,
@@ -32,36 +32,38 @@ export const middleware = [authMiddleware];
 
 export const loader: LoaderFunction = async ({ request }) => {
   const { client } = getDatabaseClient(request);
-  const revisionAPI = getResourceRevisionAPI(client);
-  const revisions = await revisionAPI.getList({ status: "PENDING" });
+  const editAPI = getResourceEditAPI(client);
 
-  const resourceIds = [...new Set(revisions.map((r) => r.mapped_resources))];
-  const resourceNames = new Map<number, string | null>();
+  const [edits, newResources] = await Promise.all([
+    editAPI.getEditsQueue(),
+    editAPI.getNewResourcesQueue(),
+  ]);
 
-  if (resourceIds.length > 0) {
-    const { data, error } = await client
-      .from("resources")
-      .select("id, name, address")
-      .in("id", resourceIds);
-
-    if (error) {
-      throw error;
-    }
-
-    for (const resource of data ?? []) {
-      resourceNames.set(resource.id, resource.name || resource.address || null);
-    }
-  }
-
-  return {
-    revisions,
-    resourceNames: Object.fromEntries(resourceNames),
-  };
+  return { edits, newResources };
 };
 
-type RowData = ResourceRevision & { resourceLabel: string };
+type RowData = {
+  id: number;
+  kind: "EDIT" | "NEW";
+  name: string | null;
+  resource_type: ResourceEdit["resource_type"];
+  resourceLabel: string;
+  submitted_at: string;
+};
 
 const columns: ColumnDef<RowData>[] = [
+  {
+    accessorKey: "kind",
+    header: "Kind",
+    cell: ({ row }) => (
+      <Chip
+        label={row.original.kind === "NEW" ? "New" : "Edit"}
+        size="small"
+        variant={row.original.kind === "NEW" ? "filled" : "outlined"}
+        color={row.original.kind === "NEW" ? "primary" : "default"}
+      />
+    ),
+  },
   {
     accessorKey: "name",
     header: "Proposed name",
@@ -84,10 +86,10 @@ const columns: ColumnDef<RowData>[] = [
     header: "Existing resource",
   },
   {
-    accessorKey: "date_created",
+    accessorKey: "submitted_at",
     header: "Submitted",
     cell: ({ row }) =>
-      new Date(row.original.date_created).toLocaleString(undefined, {
+      new Date(row.original.submitted_at).toLocaleString(undefined, {
         dateStyle: "medium",
         timeStyle: "short",
       }),
@@ -95,24 +97,38 @@ const columns: ColumnDef<RowData>[] = [
 ];
 
 const ReviewsQueue = () => {
-  const { revisions, resourceNames } = useLoaderData<{
-    revisions: ResourceRevision[];
-    resourceNames: Record<number, string | null>;
+  const { edits, newResources } = useLoaderData<{
+    edits: ResourceEditQueueRow[];
+    newResources: ResourceEdit[];
   }>();
   const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "date_created", desc: true },
+    { id: "submitted_at", desc: true },
   ]);
 
   const data: RowData[] = useMemo(
-    () =>
-      revisions.map((revision) => ({
-        ...revision,
+    () => [
+      ...edits.map((edit) => ({
+        id: edit.id,
+        kind: "EDIT" as const,
+        name: edit.name ?? null,
+        resource_type: edit.resource_type,
         resourceLabel:
-          resourceNames[revision.mapped_resources] ||
-          `Resource #${revision.mapped_resources}`,
+          edit.current_resource?.name ||
+          edit.current_resource?.address ||
+          `Resource #${edit.mapped_resource}`,
+        submitted_at: edit.submitted_at,
       })),
-    [revisions, resourceNames],
+      ...newResources.map((edit) => ({
+        id: edit.id,
+        kind: "NEW" as const,
+        name: edit.name ?? null,
+        resource_type: edit.resource_type,
+        resourceLabel: "—",
+        submitted_at: edit.submitted_at,
+      })),
+    ],
+    [edits, newResources],
   );
 
   const table = useReactTable({
@@ -126,10 +142,11 @@ const ReviewsQueue = () => {
   return (
     <div>
       <Typography variant="h5" fontWeight={600} gutterBottom>
-        Resource edit reviews
+        Resource reviews
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Proposed edits to existing PHLask resources, pending approval.
+        Proposed edits to existing PHLask resources and brand-new site
+        submissions, pending approval.
       </Typography>
 
       <TableContainer component={Paper} variant="outlined">

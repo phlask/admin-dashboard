@@ -9,13 +9,12 @@ import {
   TableCell,
   TableContainer,
   TableRow,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import type { LoaderFunction } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { getDatabaseClient } from "~/api/client.server";
-import { getResourceRevisionAPI } from "~/api/resource-revisions/methods";
+import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { authMiddleware } from "~/middleware/auth";
 import type { ResourceType } from "~/types/ResourceEntry";
 import {
@@ -29,22 +28,30 @@ const RESOURCE_TYPES: ResourceType[] = ["WATER", "FOOD", "FORAGE", "BATHROOM"];
 
 export const loader: LoaderFunction = async ({ request }) => {
   const { client } = getDatabaseClient(request);
-  const revisionAPI = getResourceRevisionAPI(client);
-  const revisions = await revisionAPI.getList();
+  const editAPI = getResourceEditAPI(client);
+  const edits = await editAPI.getList();
 
   const submitterCounts = new Map<string, number>();
+  const approverCounts = new Map<string, number>();
   const outstandingByType = new Map<string, number>();
   let pendingCount = 0;
 
-  for (const revision of revisions) {
-    const creator = revision.creator || "Unknown";
+  for (const edit of edits) {
+    const creator = edit.creator || "Unknown";
     submitterCounts.set(creator, (submitterCounts.get(creator) ?? 0) + 1);
 
-    if (revision.status === "PENDING") {
+    if (edit.review_status === "PENDING") {
       pendingCount += 1;
       outstandingByType.set(
-        revision.resource_type,
-        (outstandingByType.get(revision.resource_type) ?? 0) + 1,
+        edit.resource_type,
+        (outstandingByType.get(edit.resource_type) ?? 0) + 1,
+      );
+    }
+
+    if (edit.review_status === "APPROVED" && edit.reviewed_by) {
+      approverCounts.set(
+        edit.reviewed_by,
+        (approverCounts.get(edit.reviewed_by) ?? 0) + 1,
       );
     }
   }
@@ -54,23 +61,30 @@ export const loader: LoaderFunction = async ({ request }) => {
     .slice(0, 5)
     .map(([creator, count]) => ({ creator, count }));
 
+  const topApprovers = [...approverCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([reviewer, count]) => ({ reviewer, count }));
+
   const outstanding = RESOURCE_TYPES.map((type) => ({
     type,
     count: outstandingByType.get(type) ?? 0,
   }));
 
   return {
-    totalRevisions: revisions.length,
+    totalEdits: edits.length,
     pendingCount,
     topSubmitters,
+    topApprovers,
     outstanding,
   };
 };
 
 type LoaderData = {
-  totalRevisions: number;
+  totalEdits: number;
   pendingCount: number;
   topSubmitters: { creator: string; count: number }[];
+  topApprovers: { reviewer: string; count: number }[];
   outstanding: { type: string; count: number }[];
 };
 
@@ -121,8 +135,13 @@ const StatCard = ({
 );
 
 const Dashboard = () => {
-  const { totalRevisions, pendingCount, topSubmitters, outstanding } =
-    useLoaderData<LoaderData>();
+  const {
+    totalEdits,
+    pendingCount,
+    topSubmitters,
+    topApprovers,
+    outstanding,
+  } = useLoaderData<LoaderData>();
 
   return (
     <Stack gap={3}>
@@ -143,7 +162,7 @@ const Dashboard = () => {
         />
         <StatCard
           label="Total submissions"
-          value={totalRevisions}
+          value={totalEdits}
           icon={<HourglassTop fontSize="small" />}
         />
       </Stack>
@@ -214,18 +233,30 @@ const Dashboard = () => {
           )}
         </Paper>
 
-        <Paper
-          variant="outlined"
-          sx={{ p: 2.5, flex: 1, bgcolor: "action.hover" }}
-        >
-          <Tooltip title="resource_revisions has no reviewed_by column yet, so there's no record of who approved/rejected a given submission. Add that column (and set it in the approve/reject action) to unlock this.">
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Top approvers
-            </Typography>
-          </Tooltip>
-          <Typography variant="body2" color="text.secondary">
-            Not trackable yet — approvals don't record who approved them.
+        <Paper variant="outlined" sx={{ p: 2.5, flex: 1 }}>
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            Top approvers
           </Typography>
+          {topApprovers.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No approvals yet.
+            </Typography>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableBody>
+                  {topApprovers.map(({ reviewer, count }) => (
+                    <TableRow key={reviewer}>
+                      <TableCell>{reviewer}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>
+                        {count}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </Paper>
       </Stack>
     </Stack>

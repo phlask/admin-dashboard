@@ -29,9 +29,10 @@ import {
   useLoaderData,
 } from "react-router";
 import { getDatabaseClient } from "~/api/client.server";
-import { getResourceRevisionAPI } from "~/api/resource-revisions/methods";
+import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { getResourceEntryAPI } from "~/api/resources/methods";
 import { authMiddleware } from "~/middleware/auth";
+import { userContext } from "~/context/user";
 import type {
   BathroomTag,
   DispenserType,
@@ -45,7 +46,7 @@ import type {
   ResourceType,
   WaterTag,
 } from "~/types/ResourceEntry";
-import type { ResourceRevision } from "~/types/ResourceRevision";
+import type { ResourceEdit } from "~/types/ResourceEdit";
 import { statusChipColor } from "~/utils/chipColors";
 
 export const middleware = [authMiddleware];
@@ -129,35 +130,35 @@ type EditableValues = {
   bathroom: { tags: BathroomTag[] };
 };
 
-const toEditableValues = (revision: ResourceRevision): EditableValues => ({
-  name: revision.name ?? "",
-  resource_type: revision.resource_type,
-  entry_type: revision.entry_type ?? "",
-  address: revision.address ?? "",
-  city: revision.city ?? "",
-  state: revision.state ?? "",
-  zip_code: revision.zip_code ?? "",
-  latitude: revision.latitude,
-  longitude: revision.longitude,
-  description: revision.description ?? "",
-  guidelines: revision.guidelines ?? "",
+const toEditableValues = (edit: ResourceEdit): EditableValues => ({
+  name: edit.name ?? "",
+  resource_type: edit.resource_type,
+  entry_type: edit.entry_type ?? "",
+  address: edit.address ?? "",
+  city: edit.city ?? "",
+  state: edit.state ?? "",
+  zip_code: edit.zip_code ?? "",
+  latitude: edit.latitude,
+  longitude: edit.longitude,
+  description: edit.description ?? "",
+  guidelines: edit.guidelines ?? "",
   water: {
-    dispenser_type: revision.water?.dispenser_type ?? [],
-    tags: revision.water?.tags ?? [],
+    dispenser_type: edit.water?.dispenser_type ?? [],
+    tags: edit.water?.tags ?? [],
   },
   food: {
-    food_type: revision.food?.food_type ?? [],
-    distribution_type: revision.food?.distribution_type ?? [],
-    organization_type: revision.food?.organization_type ?? [],
-    organization_name: revision.food?.organization_name ?? "",
-    organization_url: revision.food?.organization_url ?? "",
+    food_type: edit.food?.food_type ?? [],
+    distribution_type: edit.food?.distribution_type ?? [],
+    organization_type: edit.food?.organization_type ?? [],
+    organization_name: edit.food?.organization_name ?? "",
+    organization_url: edit.food?.organization_url ?? "",
   },
   forage: {
-    forage_type: revision.forage?.forage_type ?? [],
-    tags: revision.forage?.tags ?? [],
+    forage_type: edit.forage?.forage_type ?? [],
+    tags: edit.forage?.tags ?? [],
   },
   bathroom: {
-    tags: revision.bathroom?.tags ?? [],
+    tags: edit.bathroom?.tags ?? [],
   },
 });
 
@@ -168,28 +169,31 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   }
 
   const { client } = getDatabaseClient(request);
-  const revisionAPI = getResourceRevisionAPI(client);
-  const revision = await revisionAPI.getById(id);
+  const editAPI = getResourceEditAPI(client);
+  const edit = await editAPI.getById(id);
 
   let resource: ResourceEntry | null = null;
-  try {
-    const resourceAPI = getResourceEntryAPI(client);
-    resource = await resourceAPI.getById(String(revision.mapped_resources));
-  } catch {
-    resource = null;
+  if (edit.mapped_resource !== null) {
+    try {
+      const resourceAPI = getResourceEntryAPI(client);
+      resource = await resourceAPI.getById(String(edit.mapped_resource));
+    } catch {
+      resource = null;
+    }
   }
 
-  return { revision, resource };
+  return { edit, resource };
 };
 
-export const action: ActionFunction = async ({ request, params }) => {
+export const action: ActionFunction = async ({ request, params, context }) => {
   const id = Number(params.id);
   if (!Number.isInteger(id)) {
     throw data("Not found", { status: 404 });
   }
 
   const { client, headers } = getDatabaseClient(request);
-  const revisionAPI = getResourceRevisionAPI(client);
+  const editAPI = getResourceEditAPI(client);
+  const reviewer = context.get(userContext)?.email ?? "unknown";
   const contentType = request.headers.get("content-type") || "";
 
   if (contentType.includes("application/json")) {
@@ -200,8 +204,8 @@ export const action: ActionFunction = async ({ request, params }) => {
     }
 
     try {
-      const updated = await revisionAPI.updateFields(id, body.values);
-      return data({ message: "Changes saved.", ok: true, revision: updated });
+      const updated = await editAPI.updateFields(id, body.values);
+      return data({ message: "Changes saved.", ok: true, edit: updated });
     } catch {
       return data({ message: "Failed to save changes." }, { status: 400 });
     }
@@ -214,31 +218,43 @@ export const action: ActionFunction = async ({ request, params }) => {
     return data({ message: "Unknown action" }, { status: 400 });
   }
 
-  await revisionAPI.updateStatus(
-    id,
-    intent === "approve" ? "APPROVED" : "REJECTED",
-  );
+  try {
+    if (intent === "approve") {
+      await editAPI.approve(id, reviewer);
+    } else {
+      await editAPI.reject(id, reviewer);
+    }
+  } catch (error) {
+    return data(
+      {
+        message:
+          error instanceof Error ? error.message : "Failed to review edit.",
+      },
+      { status: 400 },
+    );
+  }
 
   return redirect("/reviews", { headers });
 };
 
 const ReviewDetail = () => {
-  const { revision, resource } = useLoaderData<{
-    revision: ResourceRevision;
+  const { edit, resource } = useLoaderData<{
+    edit: ResourceEdit;
     resource: ResourceEntry | null;
   }>();
   const actionData = useActionData<{ message?: string }>();
   const fetcher = useFetcher<{ message?: string; ok?: boolean }>();
 
   const [values, setValues] = useState<EditableValues>(() =>
-    toEditableValues(revision),
+    toEditableValues(edit),
   );
 
   useEffect(() => {
-    setValues(toEditableValues(revision));
-  }, [revision]);
+    setValues(toEditableValues(edit));
+  }, [edit]);
 
-  const isPending = revision.status === "PENDING";
+  const isNew = edit.mapped_resource === null;
+  const isPending = edit.review_status === "PENDING";
   const isSaving = fetcher.state !== "idle";
 
   const setField = <K extends keyof EditableValues>(
@@ -267,7 +283,7 @@ const ReviewDetail = () => {
   ) => setValues((v) => ({ ...v, bathroom: { ...v.bathroom, [key]: value } }));
 
   const handleSave = () => {
-    const payload: Partial<ResourceRevision> = {
+    const payload: Partial<ResourceEntry> = {
       name: values.name || null,
       resource_type: values.resource_type,
       entry_type: values.entry_type || null,
@@ -335,25 +351,32 @@ const ReviewDetail = () => {
         </Typography>
         <Stack direction="row" gap={1} alignItems="center">
           <Chip
-            label={revision.status}
+            label={edit.review_status}
             size="small"
-            color={statusChipColor(revision.status)}
+            color={statusChipColor(edit.review_status)}
           />
           <Typography variant="body2" color="text.secondary">
             Submitted{" "}
-            {new Date(revision.date_created).toLocaleString(undefined, {
+            {new Date(edit.submitted_at).toLocaleString(undefined, {
               dateStyle: "medium",
               timeStyle: "short",
             })}
-            {revision.creator ? ` by ${revision.creator}` : ""}
+            {edit.creator ? ` by ${edit.creator}` : ""}
           </Typography>
         </Stack>
       </Box>
 
-      {!resource && (
+      {isNew && (
+        <Alert severity="info">
+          This is a brand-new site submission — there is no existing resource
+          to compare against.
+        </Alert>
+      )}
+
+      {!isNew && !resource && (
         <Alert severity="warning">
-          The resource this revision targets (#{revision.mapped_resources})
-          could not be found — it may have been deleted.
+          The resource this edit targets (#{edit.mapped_resource}) could not
+          be found — it may have been deleted.
         </Alert>
       )}
 
@@ -553,13 +576,13 @@ const ReviewDetail = () => {
             <TableRow>
               <TableCell sx={{ color: "text.secondary" }}>Hours</TableCell>
               <TableCell>{formatValue(resource?.hours)}</TableCell>
-              <TableCell>{formatValue(revision.hours)}</TableCell>
+              <TableCell>{formatValue(edit.hours)}</TableCell>
             </TableRow>
 
             <TableRow>
               <TableCell sx={{ color: "text.secondary" }}>Images</TableCell>
               <TableCell>{formatValue(resource?.images)}</TableCell>
-              <TableCell>{formatValue(revision.images)}</TableCell>
+              <TableCell>{formatValue(edit.images)}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
