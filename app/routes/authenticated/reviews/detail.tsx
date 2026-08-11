@@ -176,7 +176,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   if (edit.mapped_resource !== null) {
     try {
       const resourceAPI = getResourceEntryAPI(client);
-      resource = await resourceAPI.getById(String(edit.mapped_resource));
+      resource = await resourceAPI.getById(edit.mapped_resource);
     } catch {
       resource = null;
     }

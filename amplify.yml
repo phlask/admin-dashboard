@@ -1,0 +1,19 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm use 22
+        - corepack enable
+        - corepack prepare pnpm@10.28.2 --activate
+        - pnpm install --frozen-lockfile
+    build:
+      commands:
+        - env | grep -e SUPABASE_URL >> .env
+        - env | grep -e SUPABASE_PUBLISHABLE_KEY >> .env
+        - pnpm run build
+        - bash bin/postbuild.sh
+  artifacts:
+    baseDirectory: .amplify-hosting
+    files:
+      - '**/*'

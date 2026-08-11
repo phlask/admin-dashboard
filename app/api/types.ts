@@ -14,8 +14,8 @@ type PaginatedResult<Entity> = {
 
 export type GetModelAPI<Entity, Params> = (client: SupabaseClient) => {
   getList: (params: Params) => Promise<PaginatedResult<Entity>>;
-  getById: (id: string) => Promise<Entity>;
+  getById: (id: number) => Promise<Entity>;
   create: (values: Entity) => Promise<Entity>;
-  updateById: (id: string, values: Partial<Entity>) => Promise<Entity>;
-  delete: (id: string) => Promise<void>;
+  updateById: (id: number, values: Partial<Entity>) => Promise<Entity>;
+  delete: (id: number) => Promise<void>;
 };
