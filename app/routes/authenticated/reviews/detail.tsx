@@ -31,8 +31,9 @@ import {
 import { getDatabaseClient } from "~/api/client.server";
 import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { getResourceEntryAPI } from "~/api/resources/methods";
-import { authMiddleware } from "~/middleware/auth";
 import { userContext } from "~/context/user";
+import { authMiddleware } from "~/middleware/auth";
+import type { ResourceEdit } from "~/types/ResourceEdit";
 import type {
   BathroomTag,
   DispenserType,
@@ -46,7 +47,6 @@ import type {
   ResourceType,
   WaterTag,
 } from "~/types/ResourceEntry";
-import type { ResourceEdit } from "~/types/ResourceEdit";
 import { statusChipColor } from "~/utils/chipColors";
 
 export const middleware = [authMiddleware];
@@ -368,15 +368,15 @@ const ReviewDetail = () => {
 
       {isNew && (
         <Alert severity="info">
-          This is a brand-new site submission — there is no existing resource
-          to compare against.
+          This is a brand-new site submission — there is no existing resource to
+          compare against.
         </Alert>
       )}
 
       {!isNew && !resource && (
         <Alert severity="warning">
-          The resource this edit targets (#{edit.mapped_resource}) could not
-          be found — it may have been deleted.
+          The resource this edit targets (#{edit.mapped_resource}) could not be
+          found — it may have been deleted.
         </Alert>
       )}
 

@@ -19,8 +19,8 @@ import {
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { type LoaderFunction, useLoaderData, useNavigate } from "react-router";
-import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { getDatabaseClient } from "~/api/client.server";
+import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { authMiddleware } from "~/middleware/auth";
 import type { ResourceEdit, ResourceEditQueueRow } from "~/types/ResourceEdit";
 import {

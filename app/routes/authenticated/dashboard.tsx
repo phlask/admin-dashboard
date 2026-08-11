@@ -135,13 +135,8 @@ const StatCard = ({
 );
 
 const Dashboard = () => {
-  const {
-    totalEdits,
-    pendingCount,
-    topSubmitters,
-    topApprovers,
-    outstanding,
-  } = useLoaderData<LoaderData>();
+  const { totalEdits, pendingCount, topSubmitters, topApprovers, outstanding } =
+    useLoaderData<LoaderData>();
 
   return (
     <Stack gap={3}>

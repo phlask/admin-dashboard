@@ -1,10 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ResourceEntry } from "~/types/ResourceEntry";
 import type {
   EditReviewStatus,
   ResourceEdit,
   ResourceEditQueueRow,
 } from "~/types/ResourceEdit";
+import type { ResourceEntry } from "~/types/ResourceEntry";
 
 const TABLE_NAME = "resource_edits";
 

@@ -1,8 +1,8 @@
 import { LocalDining, Park, WaterDrop, Wc } from "@mui/icons-material";
 import type { ChipProps } from "@mui/material";
 import type { ReactElement } from "react";
-import type { ResourceType } from "~/types/ResourceEntry";
 import type { EditReviewStatus } from "~/types/ResourceEdit";
+import type { ResourceType } from "~/types/ResourceEntry";
 
 export const resourceTypeChipColor = (
   type: ResourceType | string,
