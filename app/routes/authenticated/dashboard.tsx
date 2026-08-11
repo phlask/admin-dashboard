@@ -40,7 +40,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     const creator = revision.creator || "Unknown";
     submitterCounts.set(creator, (submitterCounts.get(creator) ?? 0) + 1);
 
-    if (revision.status === "PENDING") {
+    if (revision.review_status === "PENDING") {
       pendingCount += 1;
       outstandingByType.set(
         revision.resource_type,
@@ -218,7 +218,7 @@ const Dashboard = () => {
           variant="outlined"
           sx={{ p: 2.5, flex: 1, bgcolor: "action.hover" }}
         >
-          <Tooltip title="resource_revisions has no reviewed_by column yet, so there's no record of who approved/rejected a given submission. Add that column (and set it in the approve/reject action) to unlock this.">
+          <Tooltip title="resource_edits has no reviewed_by column yet, so there's no record of who approved/rejected a given submission. Add that column (and set it in the approve/reject action) to unlock this.">
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>
               Top approvers
             </Typography>

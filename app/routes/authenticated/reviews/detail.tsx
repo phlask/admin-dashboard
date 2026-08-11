@@ -45,7 +45,7 @@ import type {
   ResourceType,
   WaterTag,
 } from "~/types/ResourceEntry";
-import type { ResourceRevision } from "~/types/ResourceRevision";
+import type { ResourceEdit } from "~/types/ResourceRevision";
 import { statusChipColor } from "~/utils/chipColors";
 
 export const middleware = [authMiddleware];
@@ -129,7 +129,7 @@ type EditableValues = {
   bathroom: { tags: BathroomTag[] };
 };
 
-const toEditableValues = (revision: ResourceRevision): EditableValues => ({
+const toEditableValues = (revision: ResourceEdit): EditableValues => ({
   name: revision.name ?? "",
   resource_type: revision.resource_type,
   entry_type: revision.entry_type ?? "",
@@ -174,7 +174,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   let resource: ResourceEntry | null = null;
   try {
     const resourceAPI = getResourceEntryAPI(client);
-    resource = await resourceAPI.getById(String(revision.mapped_resources));
+    resource = await resourceAPI.getById(revision.mapped_resource);
   } catch {
     resource = null;
   }
@@ -224,7 +224,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 const ReviewDetail = () => {
   const { revision, resource } = useLoaderData<{
-    revision: ResourceRevision;
+    revision: ResourceEdit;
     resource: ResourceEntry | null;
   }>();
   const actionData = useActionData<{ message?: string }>();
@@ -238,7 +238,7 @@ const ReviewDetail = () => {
     setValues(toEditableValues(revision));
   }, [revision]);
 
-  const isPending = revision.status === "PENDING";
+  const isPending = revision.review_status === "PENDING";
   const isSaving = fetcher.state !== "idle";
 
   const setField = <K extends keyof EditableValues>(
@@ -267,7 +267,7 @@ const ReviewDetail = () => {
   ) => setValues((v) => ({ ...v, bathroom: { ...v.bathroom, [key]: value } }));
 
   const handleSave = () => {
-    const payload: Partial<ResourceRevision> = {
+    const payload: Partial<ResourceEdit> = {
       name: values.name || null,
       resource_type: values.resource_type,
       entry_type: values.entry_type || null,
@@ -335,9 +335,9 @@ const ReviewDetail = () => {
         </Typography>
         <Stack direction="row" gap={1} alignItems="center">
           <Chip
-            label={revision.status}
+            label={revision.review_status}
             size="small"
-            color={statusChipColor(revision.status)}
+            color={statusChipColor(revision.review_status)}
           />
           <Typography variant="body2" color="text.secondary">
             Submitted{" "}
@@ -352,8 +352,8 @@ const ReviewDetail = () => {
 
       {!resource && (
         <Alert severity="warning">
-          The resource this revision targets (#{revision.mapped_resources})
-          could not be found — it may have been deleted.
+          The resource this revision targets (#{revision.mapped_resource}) could
+          not be found — it may have been deleted.
         </Alert>
       )}
 

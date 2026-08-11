@@ -2,7 +2,7 @@ import { LocalDining, Park, WaterDrop, Wc } from "@mui/icons-material";
 import type { ChipProps } from "@mui/material";
 import type { ReactElement } from "react";
 import type { ResourceType } from "~/types/ResourceEntry";
-import type { RevisionStatus } from "~/types/ResourceRevision";
+import type { ResourceEditReviewStatus } from "~/types/ResourceRevision";
 
 export const resourceTypeChipColor = (
   type: ResourceType | string,
@@ -72,7 +72,7 @@ export const resourceTypeChipIcon = (
 };
 
 export const statusChipColor = (
-  status: RevisionStatus | string,
+  status: ResourceEditReviewStatus | string,
 ): ChipProps["color"] => {
   switch (status) {
     case "PENDING":

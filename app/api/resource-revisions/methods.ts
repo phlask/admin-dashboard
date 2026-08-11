@@ -1,20 +1,20 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
-  ResourceRevision,
-  RevisionStatus,
+  ResourceEdit,
+  ResourceEditReviewStatus,
 } from "~/types/ResourceRevision";
 
-const TABLE_NAME = "resource_revisions";
+const TABLE_NAME = "resource_edits";
 
 export const getResourceRevisionAPI = (client: SupabaseClient) => {
   const table = client.from(TABLE_NAME);
 
   return {
-    getList: async (params: { status?: RevisionStatus } = {}) => {
+    getList: async (params: { status?: ResourceEditReviewStatus } = {}) => {
       let query = table.select("*").order("date_created", { ascending: false });
 
       if (params.status) {
-        query = query.eq("status", params.status);
+        query = query.eq("review_status", params.status);
       }
 
       const { data, error } = await query;
@@ -23,13 +23,13 @@ export const getResourceRevisionAPI = (client: SupabaseClient) => {
         throw error;
       }
 
-      return (data ?? []) as ResourceRevision[];
+      return (data ?? []) as ResourceEdit[];
     },
     getById: async (id: number) => {
       const { data, error } = await table
         .select("*")
         .eq("id", id)
-        .single<ResourceRevision>();
+        .single<ResourceEdit>();
 
       if (error) {
         throw error;
@@ -37,12 +37,12 @@ export const getResourceRevisionAPI = (client: SupabaseClient) => {
 
       return data;
     },
-    updateStatus: async (id: number, status: RevisionStatus) => {
+    updateStatus: async (id: number, status: ResourceEditReviewStatus) => {
       const { data, error } = await table
         .update({ status })
         .eq("id", id)
         .select()
-        .single<ResourceRevision>();
+        .single<ResourceEdit>();
 
       if (error) {
         throw error;
@@ -50,12 +50,12 @@ export const getResourceRevisionAPI = (client: SupabaseClient) => {
 
       return data;
     },
-    updateFields: async (id: number, values: Partial<ResourceRevision>) => {
+    updateFields: async (id: number, values: Partial<ResourceEdit>) => {
       const { data, error } = await table
         .update(values)
         .eq("id", id)
         .select()
-        .single<ResourceRevision>();
+        .single<ResourceEdit>();
 
       if (error) {
         throw error;

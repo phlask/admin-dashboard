@@ -22,7 +22,7 @@ import { type LoaderFunction, useLoaderData, useNavigate } from "react-router";
 import { getDatabaseClient } from "~/api/client.server";
 import { getResourceRevisionAPI } from "~/api/resource-revisions/methods";
 import { authMiddleware } from "~/middleware/auth";
-import type { ResourceRevision } from "~/types/ResourceRevision";
+import type { ResourceEdit } from "~/types/ResourceRevision";
 import {
   resourceTypeChipColor,
   resourceTypeChipIcon,
@@ -35,7 +35,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const revisionAPI = getResourceRevisionAPI(client);
   const revisions = await revisionAPI.getList({ status: "PENDING" });
 
-  const resourceIds = [...new Set(revisions.map((r) => r.mapped_resources))];
+  const resourceIds = [...new Set(revisions.map((r) => r.mapped_resource))];
   const resourceNames = new Map<number, string | null>();
 
   if (resourceIds.length > 0) {
@@ -59,7 +59,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   };
 };
 
-type RowData = ResourceRevision & { resourceLabel: string };
+type RowData = ResourceEdit & { resourceLabel: string };
 
 const columns: ColumnDef<RowData>[] = [
   {
@@ -96,7 +96,7 @@ const columns: ColumnDef<RowData>[] = [
 
 const ReviewsQueue = () => {
   const { revisions, resourceNames } = useLoaderData<{
-    revisions: ResourceRevision[];
+    revisions: ResourceEdit[];
     resourceNames: Record<number, string | null>;
   }>();
   const navigate = useNavigate();
@@ -109,8 +109,8 @@ const ReviewsQueue = () => {
       revisions.map((revision) => ({
         ...revision,
         resourceLabel:
-          resourceNames[revision.mapped_resources] ||
-          `Resource #${revision.mapped_resources}`,
+          resourceNames[revision.mapped_resource] ||
+          `Resource #${revision.mapped_resource}`,
       })),
     [revisions, resourceNames],
   );
