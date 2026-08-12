@@ -29,29 +29,40 @@ const RESOURCE_TYPES: ResourceType[] = ["WATER", "FOOD", "FORAGE", "BATHROOM"];
 export const loader: LoaderFunction = async ({ request }) => {
   const { client } = getDatabaseClient(request);
   const editAPI = getResourceEditAPI(client);
-  const edits = await editAPI.getList();
+
+  // Every `resource_edits` row is either still PENDING (covered by the two
+  // queue views) or has been decided (covered by `resource_change_log`), so
+  // this trio fully reconstructs the stats below without ever scanning the
+  // full `resource_edits` table (with all its wide proposed-value columns).
+  const [pendingEdits, newResources, changeLog] = await Promise.all([
+    editAPI.getEditsQueue(),
+    editAPI.getNewResourcesQueue(),
+    editAPI.getChangeLog(),
+  ]);
+
+  const pending = [...pendingEdits, ...newResources];
 
   const submitterCounts = new Map<string, number>();
   const approverCounts = new Map<string, number>();
   const outstandingByType = new Map<string, number>();
-  let pendingCount = 0;
 
-  for (const edit of edits) {
-    const creator = edit.creator || "Unknown";
-    submitterCounts.set(creator, (submitterCounts.get(creator) ?? 0) + 1);
+  for (const edit of pending) {
+    const submitter = edit.submitted_by || "Unknown";
+    submitterCounts.set(submitter, (submitterCounts.get(submitter) ?? 0) + 1);
+    outstandingByType.set(
+      edit.resource_type,
+      (outstandingByType.get(edit.resource_type) ?? 0) + 1,
+    );
+  }
 
-    if (edit.review_status === "PENDING") {
-      pendingCount += 1;
-      outstandingByType.set(
-        edit.resource_type,
-        (outstandingByType.get(edit.resource_type) ?? 0) + 1,
-      );
-    }
+  for (const entry of changeLog) {
+    const submitter = entry.submitted_by || "Unknown";
+    submitterCounts.set(submitter, (submitterCounts.get(submitter) ?? 0) + 1);
 
-    if (edit.review_status === "APPROVED" && edit.reviewed_by) {
+    if (entry.review_status === "APPROVED" && entry.reviewed_by) {
       approverCounts.set(
-        edit.reviewed_by,
-        (approverCounts.get(edit.reviewed_by) ?? 0) + 1,
+        entry.reviewed_by,
+        (approverCounts.get(entry.reviewed_by) ?? 0) + 1,
       );
     }
   }
@@ -72,8 +83,8 @@ export const loader: LoaderFunction = async ({ request }) => {
   }));
 
   return {
-    totalEdits: edits.length,
-    pendingCount,
+    totalEdits: pending.length + changeLog.length,
+    pendingCount: pending.length,
     topSubmitters,
     topApprovers,
     outstanding,

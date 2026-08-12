@@ -22,7 +22,11 @@ import { type LoaderFunction, useLoaderData, useNavigate } from "react-router";
 import { getDatabaseClient } from "~/api/client.server";
 import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { authMiddleware } from "~/middleware/auth";
-import type { ResourceEdit, ResourceEditQueueRow } from "~/types/ResourceEdit";
+import type {
+  ResourceEdit,
+  ResourceEditCount,
+  ResourceEditQueueRow,
+} from "~/types/ResourceEdit";
 import {
   resourceTypeChipColor,
   resourceTypeChipIcon,
@@ -34,12 +38,13 @@ export const loader: LoaderFunction = async ({ request }) => {
   const { client } = getDatabaseClient(request);
   const editAPI = getResourceEditAPI(client);
 
-  const [edits, newResources] = await Promise.all([
+  const [edits, newResources, editCounts] = await Promise.all([
     editAPI.getEditsQueue(),
     editAPI.getNewResourcesQueue(),
+    editAPI.getEditCounts(),
   ]);
 
-  return { edits, newResources };
+  return { edits, newResources, editCounts };
 };
 
 type RowData = {
@@ -49,6 +54,8 @@ type RowData = {
   resource_type: ResourceEdit["resource_type"];
   resourceLabel: string;
   submitted_at: string;
+  /** How many PENDING edits (including this one) target the same resource. */
+  competingEdits: number;
 };
 
 const columns: ColumnDef<RowData>[] = [
@@ -86,6 +93,20 @@ const columns: ColumnDef<RowData>[] = [
     header: "Existing resource",
   },
   {
+    accessorKey: "competingEdits",
+    header: "Pending edits",
+    cell: ({ row }) =>
+      row.original.competingEdits > 1 ? (
+        <Chip
+          label={row.original.competingEdits}
+          size="small"
+          color="warning"
+        />
+      ) : (
+        row.original.competingEdits || "—"
+      ),
+  },
+  {
     accessorKey: "submitted_at",
     header: "Submitted",
     cell: ({ row }) =>
@@ -97,14 +118,20 @@ const columns: ColumnDef<RowData>[] = [
 ];
 
 const ReviewsQueue = () => {
-  const { edits, newResources } = useLoaderData<{
+  const { edits, newResources, editCounts } = useLoaderData<{
     edits: ResourceEditQueueRow[];
     newResources: ResourceEdit[];
+    editCounts: ResourceEditCount[];
   }>();
   const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([
     { id: "submitted_at", desc: true },
   ]);
+
+  const pendingCountByResource = useMemo(
+    () => new Map(editCounts.map((c) => [c.resource_id, c.pending_count])),
+    [editCounts],
+  );
 
   const data: RowData[] = useMemo(
     () => [
@@ -118,6 +145,9 @@ const ReviewsQueue = () => {
           edit.current_resource?.address ||
           `Resource #${edit.mapped_resource}`,
         submitted_at: edit.submitted_at,
+        competingEdits: edit.mapped_resource
+          ? (pendingCountByResource.get(edit.mapped_resource) ?? 1)
+          : 0,
       })),
       ...newResources.map((edit) => ({
         id: edit.id,
@@ -126,9 +156,10 @@ const ReviewsQueue = () => {
         resource_type: edit.resource_type,
         resourceLabel: "—",
         submitted_at: edit.submitted_at,
+        competingEdits: 0,
       })),
     ],
-    [edits, newResources],
+    [edits, newResources, pendingCountByResource],
   );
 
   const table = useReactTable({
