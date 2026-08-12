@@ -65,7 +65,9 @@ type NewRowData = {
   submitted_at: string;
 };
 
-const submittedColumn = <T extends { submitted_at: string }>(): ColumnDef<T> => ({
+const submittedColumn = <
+  T extends { submitted_at: string },
+>(): ColumnDef<T> => ({
   accessorKey: "submitted_at",
   header: "Submitted",
   cell: ({ row }) =>

@@ -33,7 +33,10 @@ import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { getResourceEntryAPI } from "~/api/resources/methods";
 import { userContext } from "~/context/user";
 import { authMiddleware } from "~/middleware/auth";
-import type { ResourceChangeLogEntry, ResourceEdit } from "~/types/ResourceEdit";
+import type {
+  ResourceChangeLogEntry,
+  ResourceEdit,
+} from "~/types/ResourceEdit";
 import type {
   BathroomTag,
   DispenserType,
