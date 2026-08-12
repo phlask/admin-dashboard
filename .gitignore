@@ -9,3 +9,6 @@
 
 # Amplify build output
 /.amplify-hosting/
+
+# Local notes
+docs/next-up.md
