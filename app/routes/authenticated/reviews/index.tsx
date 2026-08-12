@@ -1,6 +1,7 @@
 import {
   Chip,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -47,9 +48,8 @@ export const loader: LoaderFunction = async ({ request }) => {
   return { edits, newResources, editCounts };
 };
 
-type RowData = {
+type EditRowData = {
   id: number;
-  kind: "EDIT" | "NEW";
   name: string | null;
   resource_type: ResourceEdit["resource_type"];
   resourceLabel: string;
@@ -58,19 +58,24 @@ type RowData = {
   competingEdits: number;
 };
 
-const columns: ColumnDef<RowData>[] = [
-  {
-    accessorKey: "kind",
-    header: "Kind",
-    cell: ({ row }) => (
-      <Chip
-        label={row.original.kind === "NEW" ? "New" : "Edit"}
-        size="small"
-        variant={row.original.kind === "NEW" ? "filled" : "outlined"}
-        color={row.original.kind === "NEW" ? "primary" : "default"}
-      />
-    ),
-  },
+type NewRowData = {
+  id: number;
+  name: string | null;
+  resource_type: ResourceEdit["resource_type"];
+  submitted_at: string;
+};
+
+const submittedColumn = <T extends { submitted_at: string }>(): ColumnDef<T> => ({
+  accessorKey: "submitted_at",
+  header: "Submitted",
+  cell: ({ row }) =>
+    new Date(row.original.submitted_at).toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }),
+});
+
+const editColumns: ColumnDef<EditRowData>[] = [
   {
     accessorKey: "name",
     header: "Proposed name",
@@ -106,16 +111,108 @@ const columns: ColumnDef<RowData>[] = [
         row.original.competingEdits || "—"
       ),
   },
-  {
-    accessorKey: "submitted_at",
-    header: "Submitted",
-    cell: ({ row }) =>
-      new Date(row.original.submitted_at).toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }),
-  },
+  submittedColumn<EditRowData>(),
 ];
+
+const newColumns: ColumnDef<NewRowData>[] = [
+  {
+    accessorKey: "name",
+    header: "Proposed name",
+    cell: ({ row }) => row.original.name || "—",
+  },
+  {
+    accessorKey: "resource_type",
+    header: "Type",
+    cell: ({ row }) => (
+      <Chip
+        label={row.original.resource_type}
+        size="small"
+        icon={resourceTypeChipIcon(row.original.resource_type)}
+        color={resourceTypeChipColor(row.original.resource_type)}
+      />
+    ),
+  },
+  submittedColumn<NewRowData>(),
+];
+
+type ReviewQueueTableProps<T extends { id: number }> = {
+  data: T[];
+  columns: ColumnDef<T>[];
+  emptyMessage: string;
+};
+
+function ReviewQueueTable<T extends { id: number }>({
+  data,
+  columns,
+  emptyMessage,
+}: ReviewQueueTableProps<T>) {
+  const navigate = useNavigate();
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "submitted_at", desc: true },
+  ]);
+
+  const table = useReactTable({
+    data,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  return (
+    <TableContainer component={Paper} variant="outlined">
+      <Table>
+        <TableHead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableCell
+                  key={header.id}
+                  onClick={header.column.getToggleSortingHandler()}
+                  sx={{ cursor: "pointer", fontWeight: 600 }}
+                >
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext(),
+                  )}
+                  {{ asc: " ↑", desc: " ↓" }[
+                    header.column.getIsSorted() as string
+                  ] ?? null}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableHead>
+        <TableBody>
+          {table.getRowModel().rows.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={columns.length}>
+                <Typography color="text.secondary" sx={{ py: 3 }}>
+                  {emptyMessage}
+                </Typography>
+              </TableCell>
+            </TableRow>
+          )}
+          {table.getRowModel().rows.map((row) => (
+            <TableRow
+              key={row.id}
+              onClick={() => navigate(`/reviews/${row.original.id}`)}
+              hover
+              sx={{ cursor: "pointer" }}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+}
 
 const ReviewsQueue = () => {
   const { edits, newResources, editCounts } = useLoaderData<{
@@ -123,21 +220,16 @@ const ReviewsQueue = () => {
     newResources: ResourceEdit[];
     editCounts: ResourceEditCount[];
   }>();
-  const navigate = useNavigate();
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "submitted_at", desc: true },
-  ]);
 
   const pendingCountByResource = useMemo(
     () => new Map(editCounts.map((c) => [c.resource_id, c.pending_count])),
     [editCounts],
   );
 
-  const data: RowData[] = useMemo(
-    () => [
-      ...edits.map((edit) => ({
+  const editData: EditRowData[] = useMemo(
+    () =>
+      edits.map((edit) => ({
         id: edit.id,
-        kind: "EDIT" as const,
         name: edit.name ?? null,
         resource_type: edit.resource_type,
         resourceLabel:
@@ -149,88 +241,54 @@ const ReviewsQueue = () => {
           ? (pendingCountByResource.get(edit.mapped_resource) ?? 1)
           : 0,
       })),
-      ...newResources.map((edit) => ({
-        id: edit.id,
-        kind: "NEW" as const,
-        name: edit.name ?? null,
-        resource_type: edit.resource_type,
-        resourceLabel: "—",
-        submitted_at: edit.submitted_at,
-        competingEdits: 0,
-      })),
-    ],
-    [edits, newResources, pendingCountByResource],
+    [edits, pendingCountByResource],
   );
 
-  const table = useReactTable({
-    data,
-    columns,
-    state: { sorting },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  });
-  return (
-    <div>
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        Resource reviews
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Proposed edits to existing PHLask resources and brand-new site
-        submissions, pending approval.
-      </Typography>
+  const newData: NewRowData[] = useMemo(
+    () =>
+      newResources.map((edit) => ({
+        id: edit.id,
+        name: edit.name ?? null,
+        resource_type: edit.resource_type,
+        submitted_at: edit.submitted_at,
+      })),
+    [newResources],
+  );
 
-      <TableContainer component={Paper} variant="outlined">
-        <Table>
-          <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    sx={{ cursor: "pointer", fontWeight: 600 }}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                    {{ asc: " ↑", desc: " ↓" }[
-                      header.column.getIsSorted() as string
-                    ] ?? null}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>
-            {table.getRowModel().rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={columns.length}>
-                  <Typography color="text.secondary" sx={{ py: 3 }}>
-                    No pending reviews. Nothing to do here right now.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-            {table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                onClick={() => navigate(`/reviews/${row.original.id}`)}
-                hover
-                sx={{ cursor: "pointer" }}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </div>
+  return (
+    <Stack gap={4}>
+      <div>
+        <Typography variant="h5" fontWeight={600} gutterBottom>
+          Resource reviews
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Proposed edits to existing PHLask resources and brand-new site
+          submissions, pending approval.
+        </Typography>
+      </div>
+
+      <div>
+        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+          New site submissions
+        </Typography>
+        <ReviewQueueTable
+          data={newData}
+          columns={newColumns}
+          emptyMessage="No pending new-site submissions."
+        />
+      </div>
+
+      <div>
+        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+          Edits to existing resources
+        </Typography>
+        <ReviewQueueTable
+          data={editData}
+          columns={editColumns}
+          emptyMessage="No pending edits."
+        />
+      </div>
+    </Stack>
   );
 };
 
