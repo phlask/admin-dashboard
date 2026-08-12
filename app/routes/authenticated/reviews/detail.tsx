@@ -16,7 +16,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { type SubmitEvent, useEffect, useState } from "react";
 import {
   type ActionFunction,
   data,
@@ -282,7 +282,13 @@ const ReviewDetail = () => {
     value: EditableValues["bathroom"][K],
   ) => setValues((v) => ({ ...v, bathroom: { ...v.bathroom, [key]: value } }));
 
-  const handleSave = () => {
+  const handleSave = (event: SubmitEvent<HTMLFormElement>) => {
+    // The payload is a nested object (not flat form fields), so it's sent as
+    // JSON via the fetcher rather than a native form-encoded submission —
+    // still routed through a real <fetcher.Form> below for the submit
+    // semantics (Enter-to-submit, pending state, progressive enhancement).
+    event.preventDefault();
+
     const payload: Partial<ResourceEntry> = {
       name: values.name || null,
       resource_type: values.resource_type,
@@ -776,14 +782,16 @@ const ReviewDetail = () => {
 
       {isPending && (
         <Stack direction="row" gap={2}>
-          <Button
-            variant="outlined"
-            onClick={handleSave}
-            loading={isSaving}
-            loadingPosition="start"
-          >
-            Save changes
-          </Button>
+          <fetcher.Form method="post" onSubmit={handleSave}>
+            <Button
+              type="submit"
+              variant="outlined"
+              loading={isSaving}
+              loadingPosition="start"
+            >
+              Save changes
+            </Button>
+          </fetcher.Form>
 
           <Form method="post">
             <Stack direction="row" gap={2}>
