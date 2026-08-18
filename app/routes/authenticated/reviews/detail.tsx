@@ -31,6 +31,7 @@ import {
 import { getDatabaseClient } from "~/api/client.server";
 import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { getResourceEntryAPI } from "~/api/resources/methods";
+import ResourceLocationPanel from "~/components/ResourceLocationPanel";
 import { userContext } from "~/context/user";
 import { authMiddleware } from "~/middleware/auth";
 import type {
@@ -392,6 +393,13 @@ const ReviewDetail = () => {
           found — it may have been deleted.
         </Alert>
       )}
+
+      <ResourceLocationPanel
+        latitude={values.latitude}
+        longitude={values.longitude}
+        gpId={edit.gp_id}
+        label={values.name || undefined}
+      />
 
       {!isNew && changeLog.length > 0 && (
         <Paper variant="outlined" sx={{ p: 2.5 }}>
