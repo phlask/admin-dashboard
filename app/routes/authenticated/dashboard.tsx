@@ -1,4 +1,6 @@
-import { HourglassTop, PendingActions, WaterDrop } from "@mui/icons-material";
+import HourglassTop from "@mui/icons-material/HourglassTop";
+import PendingActions from "@mui/icons-material/PendingActions";
+import WaterDrop from "@mui/icons-material/WaterDrop";
 import {
   Box,
   Chip,
