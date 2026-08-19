@@ -42,8 +42,8 @@ const ResourceLocationPanel = ({
   if (!GOOGLE_MAPS_API_KEY) {
     return (
       <Alert severity="info">
-        Map preview is unavailable — no Google Maps API key is configured
-        (set <code>VITE_GOOGLE_MAPS_API_KEY</code>).
+        Map preview is unavailable — no Google Maps API key is configured (set{" "}
+        <code>VITE_GOOGLE_MAPS_API_KEY</code>).
       </Alert>
     );
   }
