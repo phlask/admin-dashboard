@@ -1,7 +1,9 @@
-import { Dashboard, Logout, RateReview } from "@mui/icons-material";
+import Dashboard from "@mui/icons-material/Dashboard";
+import Logout from "@mui/icons-material/Logout";
+import RateReview from "@mui/icons-material/RateReview";
 import { Box } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { Link, NavLink, Outlet } from "react-router";
+import { Form, NavLink, Outlet } from "react-router";
 import phlasklogo from "~/assets/PHLASK_v2.svg";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { WaveDivider } from "~/components/WaveDivider";
@@ -168,30 +170,37 @@ export default function DashboardLayout() {
               </Box>
               <ThemeToggle />
             </Box>
-            <Box
-              component={Link}
-              to="/logout"
-              sx={(theme) => ({
-                display: "flex",
-                alignItems: "center",
-                gap: 1.25,
-                borderRadius: 3,
-                px: 2,
-                py: 1.25,
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                textDecoration: "none",
-                color: navy[600],
-                transition: "background-color 0.2s ease",
-                "&:hover": { bgcolor: brand[50] },
-                ...theme.applyStyles("dark", {
-                  color: `${brand[100]}cc`,
-                  "&:hover": { bgcolor: navy[800] },
-                }),
-              })}
-            >
-              <Logout fontSize="small" />
-              Logout
+            <Box component={Form} method="post" action="/logout">
+              <Box
+                component="button"
+                type="submit"
+                sx={(theme) => ({
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "center",
+                  gap: 1.25,
+                  borderRadius: 3,
+                  border: "none",
+                  bgcolor: "transparent",
+                  px: 2,
+                  py: 1.25,
+                  fontSize: "0.875rem",
+                  fontFamily: "inherit",
+                  fontWeight: 500,
+                  textAlign: "left",
+                  cursor: "pointer",
+                  color: navy[600],
+                  transition: "background-color 0.2s ease",
+                  "&:hover": { bgcolor: brand[50] },
+                  ...theme.applyStyles("dark", {
+                    color: `${brand[100]}cc`,
+                    "&:hover": { bgcolor: navy[800] },
+                  }),
+                })}
+              >
+                <Logout fontSize="small" />
+                Logout
+              </Box>
             </Box>
           </Box>
         </Box>

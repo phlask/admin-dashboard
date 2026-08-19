@@ -1,7 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   EditReviewStatus,
+  ResourceChangeLogEntry,
   ResourceEdit,
+  ResourceEditCount,
   ResourceEditQueueRow,
 } from "~/types/ResourceEdit";
 import type { ResourceEntry } from "~/types/ResourceEntry";
@@ -37,6 +39,46 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
       }
 
       return (data ?? []) as ResourceEdit[];
+    },
+    /** Count of PENDING edits per resource — flags resources with multiple
+     * competing proposed edits. Backed by `resource_edit_counts`. */
+    getEditCounts: async () => {
+      const { data, error } = await client
+        .from("resource_edit_counts")
+        .select("*");
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as ResourceEditCount[];
+    },
+    /** Full history of decided (APPROVED/REJECTED) edits, most recent first
+     * within each resource. Backed by `resource_change_log`. */
+    getChangeLog: async () => {
+      const { data, error } = await client
+        .from("resource_change_log")
+        .select("*");
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as ResourceChangeLogEntry[];
+    },
+    /** Decided edit history for a single resource, e.g. for the review
+     * detail page's audit trail. Backed by `resource_change_log`. */
+    getChangeLogForResource: async (resourceId: number) => {
+      const { data, error } = await client
+        .from("resource_change_log")
+        .select("*")
+        .eq("resource_id", resourceId);
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as ResourceChangeLogEntry[];
     },
     getList: async (params: { review_status?: EditReviewStatus } = {}) => {
       let query = table.select("*").order("submitted_at", { ascending: false });
