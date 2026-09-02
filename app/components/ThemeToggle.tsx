@@ -1,4 +1,5 @@
-import { DarkMode, LightMode } from "@mui/icons-material";
+import DarkMode from "@mui/icons-material/DarkMode";
+import LightMode from "@mui/icons-material/LightMode";
 import { IconButton, Tooltip } from "@mui/material";
 import { useThemeMode } from "~/theme/ThemeModeProvider";
 import { brand, navy } from "~/theme/theme";

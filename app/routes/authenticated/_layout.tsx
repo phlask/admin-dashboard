@@ -1,4 +1,6 @@
-import { Dashboard, Logout, RateReview } from "@mui/icons-material";
+import Dashboard from "@mui/icons-material/Dashboard";
+import Logout from "@mui/icons-material/Logout";
+import RateReview from "@mui/icons-material/RateReview";
 import { Box } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Form, NavLink, Outlet } from "react-router";

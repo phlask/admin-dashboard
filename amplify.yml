@@ -11,6 +11,7 @@ frontend:
       commands:
         - env | grep -e SUPABASE_URL >> .env
         - env | grep -e SUPABASE_PUBLISHABLE_KEY >> .env
+        - env | grep -e VITE_GOOGLE_MAPS_API_KEY >> .env
         - pnpm run build
         - bash bin/postbuild.sh
   artifacts:

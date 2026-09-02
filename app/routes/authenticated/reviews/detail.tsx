@@ -1,4 +1,4 @@
-import { ArrowBack } from "@mui/icons-material";
+import ArrowBack from "@mui/icons-material/ArrowBack";
 import {
   Alert,
   Autocomplete,
@@ -31,9 +31,13 @@ import {
 import { getDatabaseClient } from "~/api/client.server";
 import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { getResourceEntryAPI } from "~/api/resources/methods";
+import ResourceLocationPanel from "~/components/ResourceLocationPanel";
 import { userContext } from "~/context/user";
 import { authMiddleware } from "~/middleware/auth";
-import type { ResourceEdit } from "~/types/ResourceEdit";
+import type {
+  ResourceChangeLogEntry,
+  ResourceEdit,
+} from "~/types/ResourceEdit";
 import type {
   BathroomTag,
   DispenserType,
@@ -173,6 +177,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const edit = await editAPI.getById(id);
 
   let resource: ResourceEntry | null = null;
+  let changeLog: ResourceChangeLogEntry[] = [];
   if (edit.mapped_resource !== null) {
     try {
       const resourceAPI = getResourceEntryAPI(client);
@@ -180,9 +185,11 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     } catch {
       resource = null;
     }
+
+    changeLog = await editAPI.getChangeLogForResource(edit.mapped_resource);
   }
 
-  return { edit, resource };
+  return { edit, resource, changeLog };
 };
 
 export const action: ActionFunction = async ({ request, params, context }) => {
@@ -238,9 +245,10 @@ export const action: ActionFunction = async ({ request, params, context }) => {
 };
 
 const ReviewDetail = () => {
-  const { edit, resource } = useLoaderData<{
+  const { edit, resource, changeLog } = useLoaderData<{
     edit: ResourceEdit;
     resource: ResourceEntry | null;
+    changeLog: ResourceChangeLogEntry[];
   }>();
   const actionData = useActionData<{ message?: string }>();
   const fetcher = useFetcher<{ message?: string; ok?: boolean }>();
@@ -384,6 +392,52 @@ const ReviewDetail = () => {
           The resource this edit targets (#{edit.mapped_resource}) could not be
           found — it may have been deleted.
         </Alert>
+      )}
+
+      <ResourceLocationPanel
+        latitude={values.latitude}
+        longitude={values.longitude}
+        gpId={edit.gp_id}
+        label={values.name || undefined}
+      />
+
+      {!isNew && changeLog.length > 0 && (
+        <Paper variant="outlined" sx={{ p: 2.5 }}>
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            Change history
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableBody>
+                {changeLog.map((entry) => (
+                  <TableRow key={entry.edit_id}>
+                    <TableCell>
+                      <Chip
+                        label={entry.review_status}
+                        size="small"
+                        color={statusChipColor(entry.review_status)}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {entry.reviewed_by ?? "—"}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {entry.reviewed_at
+                        ? new Date(entry.reviewed_at).toLocaleString(
+                            undefined,
+                            { dateStyle: "medium", timeStyle: "short" },
+                          )
+                        : "—"}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {entry.review_notes ?? "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       )}
 
       <TableContainer component={Paper} variant="outlined">

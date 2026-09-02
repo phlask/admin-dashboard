@@ -1,4 +1,7 @@
-import { LocalDining, Park, WaterDrop, Wc } from "@mui/icons-material";
+import LocalDining from "@mui/icons-material/LocalDining";
+import Park from "@mui/icons-material/Park";
+import WaterDrop from "@mui/icons-material/WaterDrop";
+import Wc from "@mui/icons-material/Wc";
 import type { ChipProps } from "@mui/material";
 import type { ReactElement } from "react";
 import type { EditReviewStatus } from "~/types/ResourceEdit";
