@@ -41,6 +41,31 @@ import type { Provider } from "~/types/Provider";
 
 export const middleware = [authMiddleware];
 
+type FieldErrors = Partial<Record<"name" | "website_url" | "logo_url", string>>;
+
+const parseProviderId = (value: FormDataEntryValue | null) => {
+  const trimmed = String(value ?? "").trim();
+  if (!/^\d+$/.test(trimmed)) {
+    return null;
+  }
+
+  const id = Number(trimmed);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+};
+
+const INVALID_URL_MESSAGE =
+  "Enter a valid web address, for example example.org/logo.svg";
+
+/** Keep the underlying reason visible — an RLS denial reads the same as a typo otherwise. */
+const describeFailure = (error: unknown, fallback: string) => {
+  const detail =
+    error && typeof error === "object" && "message" in error
+      ? String((error as { message: unknown }).message)
+      : "";
+
+  return detail ? `${fallback} ${detail}` : fallback;
+};
+
 export const loader: LoaderFunction = async ({ request }) => {
   const { client } = getDatabaseClient(request);
   const providerAPI = getProviderAPI(client);
@@ -53,10 +78,27 @@ export const loader: LoaderFunction = async ({ request }) => {
   return { providers, resourceCounts };
 };
 
-/** Treat blank form fields as "not set" rather than empty strings. */
-const optionalField = (value: FormDataEntryValue | null) => {
+type UrlField = { ok: true; value: string | null } | { ok: false };
+
+const optionalUrl = (value: FormDataEntryValue | null): UrlField => {
   const trimmed = String(value ?? "").trim();
-  return trimmed.length > 0 ? trimmed : null;
+  if (!trimmed) {
+    return { ok: true, value: null };
+  }
+
+  const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
+  try {
+    const url = new URL(candidate);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return { ok: false };
+    }
+    return { ok: true, value: url.toString() };
+  } catch {
+    return { ok: false };
+  }
 };
 
 export const action: ActionFunction = async ({ request }) => {
@@ -66,16 +108,27 @@ export const action: ActionFunction = async ({ request }) => {
   const intent = formData.get("intent");
 
   if (intent === "delete") {
-    const id = Number(formData.get("id"));
-    if (!Number.isInteger(id)) {
+    const id = parseProviderId(formData.get("id"));
+    if (id === null) {
       return data({ message: "Invalid provider." }, { status: 400 });
     }
 
     try {
-      await providerAPI.delete(id);
+      const removed = await providerAPI.delete(id);
+      if (!removed) {
+        return data(
+          { message: "That provider no longer exists." },
+          { status: 404 },
+        );
+      }
+
       return data({ message: "Provider removed.", ok: true });
-    } catch {
-      return data({ message: "Failed to remove provider." }, { status: 400 });
+    } catch (error) {
+      console.error("Failed to delete provider", error);
+      return data(
+        { message: describeFailure(error, "Failed to remove provider.") },
+        { status: 400 },
+      );
     }
   }
 
@@ -84,14 +137,31 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   const name = String(formData.get("name") ?? "").trim();
+  const logoUrl = optionalUrl(formData.get("logo_url"));
+  const websiteUrl = optionalUrl(formData.get("website_url"));
+
+  const fieldErrors: FieldErrors = {};
   if (!name) {
-    return data({ message: "Name is required." }, { status: 400 });
+    fieldErrors.name = "Name is required.";
+  }
+  if (!websiteUrl.ok) {
+    fieldErrors.website_url = INVALID_URL_MESSAGE;
+  }
+  if (!logoUrl.ok) {
+    fieldErrors.logo_url = INVALID_URL_MESSAGE;
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return data(
+      { message: "Please fix the highlighted fields.", fieldErrors },
+      { status: 400 },
+    );
   }
 
   const values = {
     name,
-    logo_url: optionalField(formData.get("logo_url")),
-    website_url: optionalField(formData.get("website_url")),
+    logo_url: logoUrl.ok ? logoUrl.value : null,
+    website_url: websiteUrl.ok ? websiteUrl.value : null,
   };
 
   try {
@@ -100,33 +170,43 @@ export const action: ActionFunction = async ({ request }) => {
       return data({ message: `Added ${name}.`, ok: true });
     }
 
-    const id = Number(formData.get("id"));
-    if (!Number.isInteger(id)) {
+    const id = parseProviderId(formData.get("id"));
+    if (id === null) {
       return data({ message: "Invalid provider." }, { status: 400 });
     }
 
     await providerAPI.updateById(id, values);
     return data({ message: `Updated ${name}.`, ok: true });
-  } catch {
+  } catch (error) {
+    console.error(`Failed to ${intent} provider`, error);
     return data(
       {
-        message:
+        message: describeFailure(
+          error,
           intent === "create"
             ? "Failed to add provider."
             : "Failed to update provider.",
+        ),
       },
       { status: 400 },
     );
   }
 };
 
-type ActionResponse = { message: string; ok?: boolean };
+type ActionResponse = {
+  message: string;
+  ok?: boolean;
+  fieldErrors?: FieldErrors;
+};
 
-/**
- * Provider logos are usually wide wordmarks, so they are scaled to fit rather
- * than cropped into a square. Falls back to the initial if the logo is missing
- * or fails to load, matching the map's "Provided By" behaviour.
- */
+const hostnameOf = (url: string) => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+};
+
 const ProviderLogo = ({ provider }: { provider: Provider }) => {
   const [failed, setFailed] = useState(false);
 
@@ -164,6 +244,7 @@ const ProvidersPage = () => {
     resourceCounts: Record<number, number>;
   }>();
   const actionData = useActionData<ActionResponse>();
+  const fieldErrors = actionData?.fieldErrors;
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
@@ -171,7 +252,6 @@ const ProvidersPage = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [deleting, setDeleting] = useState<Provider | null>(null);
 
-  // Close the dialogs once a submission has succeeded.
   useEffect(() => {
     if (actionData?.ok) {
       setEditing(null);
@@ -263,7 +343,7 @@ const ProvidersPage = () => {
                         gap: 0.5,
                       }}
                     >
-                      {new URL(provider.website_url).hostname}
+                      {hostnameOf(provider.website_url)}
                       <Launch sx={{ fontSize: 14 }} />
                     </Link>
                   ) : (
@@ -335,23 +415,33 @@ const ProvidersPage = () => {
                 autoFocus
                 defaultValue={editing?.name ?? ""}
                 placeholder="Share Food Program"
+                error={Boolean(fieldErrors?.name)}
+                helperText={fieldErrors?.name}
               />
               <TextField
                 name="website_url"
                 label="Website URL"
-                type="url"
+                type="text"
+                inputMode="url"
                 fullWidth
                 defaultValue={editing?.website_url ?? ""}
                 placeholder="https://www.sharefoodprogram.org/"
+                error={Boolean(fieldErrors?.website_url)}
+                helperText={fieldErrors?.website_url ?? "Optional."}
               />
               <TextField
                 name="logo_url"
                 label="Logo URL"
-                type="url"
+                type="text"
+                inputMode="url"
                 fullWidth
                 defaultValue={editing?.logo_url ?? ""}
                 placeholder="https://example.org/logo.svg"
-                helperText="Shown on the map next to the resource. Falls back to the name if empty."
+                error={Boolean(fieldErrors?.logo_url)}
+                helperText={
+                  fieldErrors?.logo_url ??
+                  "Optional. Shown on the map next to the resource; falls back to the name if empty."
+                }
               />
             </Stack>
           </DialogContent>
