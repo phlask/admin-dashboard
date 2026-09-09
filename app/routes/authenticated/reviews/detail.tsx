@@ -178,14 +178,12 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   let resource: ResourceEntry | null = null;
   let changeLog: ResourceChangeLogEntry[] = [];
   if (edit.mapped_resource !== null) {
-    try {
-      const resourceAPI = getResourceEntryAPI(client);
-      resource = await resourceAPI.getById(edit.mapped_resource);
-    } catch {
-      resource = null;
-    }
+    const resourceAPI = getResourceEntryAPI(client);
 
-    changeLog = await editAPI.getChangeLogForResource(edit.mapped_resource);
+    [resource, changeLog] = await Promise.all([
+      resourceAPI.getById(edit.mapped_resource).catch(() => null),
+      editAPI.getChangeLogForResource(edit.mapped_resource).catch(() => []),
+    ]);
   }
 
   return { edit, resource, changeLog };

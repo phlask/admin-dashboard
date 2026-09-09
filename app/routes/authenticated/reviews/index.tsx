@@ -110,7 +110,7 @@ const editColumns: ColumnDef<EditRowData>[] = [
           color="warning"
         />
       ) : (
-        row.original.competingEdits || "—"
+        row.original.competingEdits
       ),
   },
   submittedColumn<EditRowData>(),
@@ -239,9 +239,7 @@ const ReviewsQueue = () => {
           edit.current_resource?.address ||
           `Resource #${edit.mapped_resource}`,
         submitted_at: edit.submitted_at,
-        competingEdits: edit.mapped_resource
-          ? (pendingCountByResource.get(edit.mapped_resource) ?? 1)
-          : 0,
+        competingEdits: pendingCountByResource.get(edit.mapped_resource) ?? 1,
       })),
     [edits, pendingCountByResource],
   );

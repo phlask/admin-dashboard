@@ -27,8 +27,8 @@ export type ResourceEdit = ResourceEntry & {
   review_notes: string | null;
 };
 
-/** A row from `resource_edits_queue`: a pending edit joined to its target resource. */
 export type ResourceEditQueueRow = ResourceEdit & {
+  mapped_resource: number;
   current_resource: ResourceEntry & { id: number };
 };
 
