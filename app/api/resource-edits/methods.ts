@@ -66,19 +66,36 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
 
       return (data ?? []) as ResourceChangeLogEntry[];
     },
-    /** Decided edit history for a single resource, e.g. for the review
-     * detail page's audit trail. Backed by `resource_change_log`. */
     getChangeLogForResource: async (resourceId: number) => {
       const { data, error } = await client
         .from("resource_change_log")
         .select("*")
-        .eq("resource_id", resourceId);
+        .eq("resource_id", resourceId)
+        .order("reviewed_at", { ascending: false });
 
       if (error) {
         throw error;
       }
 
       return (data ?? []) as ResourceChangeLogEntry[];
+    },
+
+    getCounts: async () => {
+      const [total, pending] = await Promise.all([
+        table.select("id", { count: "exact", head: true }),
+        table
+          .select("id", { count: "exact", head: true })
+          .eq("review_status", "PENDING"),
+      ]);
+
+      if (total.error) {
+        throw total.error;
+      }
+      if (pending.error) {
+        throw pending.error;
+      }
+
+      return { total: total.count ?? 0, pending: pending.count ?? 0 };
     },
     getList: async (params: { review_status?: EditReviewStatus } = {}) => {
       let query = table.select("*").order("submitted_at", { ascending: false });
