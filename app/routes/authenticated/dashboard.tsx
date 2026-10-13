@@ -29,29 +29,45 @@ const RESOURCE_TYPES: ResourceType[] = ["WATER", "FOOD", "FORAGE", "BATHROOM"];
 export const loader: LoaderFunction = async ({ request }) => {
   const { client } = getDatabaseClient(request);
   const editAPI = getResourceEditAPI(client);
-  const edits = await editAPI.getList();
+
+  const [counts, pendingEdits, newResources, changeLog] = await Promise.all([
+    editAPI.getCounts(),
+    editAPI.getEditsQueue(),
+    editAPI.getNewResourcesQueue(),
+    editAPI.getChangeLog(),
+  ]);
+
+  const pending = [...pendingEdits, ...newResources];
 
   const submitterCounts = new Map<string, number>();
   const approverCounts = new Map<string, number>();
   const outstandingByType = new Map<string, number>();
-  let pendingCount = 0;
 
-  for (const edit of edits) {
-    const creator = edit.creator || "Unknown";
-    submitterCounts.set(creator, (submitterCounts.get(creator) ?? 0) + 1);
-
-    if (edit.review_status === "PENDING") {
-      pendingCount += 1;
-      outstandingByType.set(
-        edit.resource_type,
-        (outstandingByType.get(edit.resource_type) ?? 0) + 1,
-      );
+  const countSubmitter = (submittedBy: string | null) => {
+    if (!submittedBy) {
+      return;
     }
+    submitterCounts.set(
+      submittedBy,
+      (submitterCounts.get(submittedBy) ?? 0) + 1,
+    );
+  };
 
-    if (edit.review_status === "APPROVED" && edit.reviewed_by) {
+  for (const edit of pending) {
+    countSubmitter(edit.submitted_by);
+    outstandingByType.set(
+      edit.resource_type,
+      (outstandingByType.get(edit.resource_type) ?? 0) + 1,
+    );
+  }
+
+  for (const entry of changeLog) {
+    countSubmitter(entry.submitted_by);
+
+    if (entry.review_status === "APPROVED" && entry.reviewed_by) {
       approverCounts.set(
-        edit.reviewed_by,
-        (approverCounts.get(edit.reviewed_by) ?? 0) + 1,
+        entry.reviewed_by,
+        (approverCounts.get(entry.reviewed_by) ?? 0) + 1,
       );
     }
   }
@@ -59,7 +75,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const topSubmitters = [...submitterCounts.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
-    .map(([creator, count]) => ({ creator, count }));
+    .map(([submitter, count]) => ({ submitter, count }));
 
   const topApprovers = [...approverCounts.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -72,8 +88,8 @@ export const loader: LoaderFunction = async ({ request }) => {
   }));
 
   return {
-    totalEdits: edits.length,
-    pendingCount,
+    totalEdits: counts.total,
+    pendingCount: counts.pending,
     topSubmitters,
     topApprovers,
     outstanding,
@@ -83,7 +99,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 type LoaderData = {
   totalEdits: number;
   pendingCount: number;
-  topSubmitters: { creator: string; count: number }[];
+  topSubmitters: { submitter: string; count: number }[];
   topApprovers: { reviewer: string; count: number }[];
   outstanding: { type: string; count: number }[];
 };
@@ -208,15 +224,15 @@ const Dashboard = () => {
           </Typography>
           {topSubmitters.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
-              No submissions yet.
+              No submitter attribution recorded yet.
             </Typography>
           ) : (
             <TableContainer>
               <Table size="small">
                 <TableBody>
-                  {topSubmitters.map(({ creator, count }) => (
-                    <TableRow key={creator}>
-                      <TableCell>{creator}</TableCell>
+                  {topSubmitters.map(({ submitter, count }) => (
+                    <TableRow key={submitter}>
+                      <TableCell>{submitter}</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 600 }}>
                         {count}
                       </TableCell>

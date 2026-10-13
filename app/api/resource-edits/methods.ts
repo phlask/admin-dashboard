@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
-  EditReviewStatus,
+  ResourceChangeLogEntry,
   ResourceEdit,
+  ResourceEditCount,
   ResourceEditQueueRow,
 } from "~/types/ResourceEdit";
 import type { ResourceEntry } from "~/types/ResourceEntry";
@@ -38,20 +39,62 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
 
       return (data ?? []) as ResourceEdit[];
     },
-    getList: async (params: { review_status?: EditReviewStatus } = {}) => {
-      let query = table.select("*").order("submitted_at", { ascending: false });
-
-      if (params.review_status) {
-        query = query.eq("review_status", params.review_status);
-      }
-
-      const { data, error } = await query;
+    /** Count of PENDING edits per resource — flags resources with multiple
+     * competing proposed edits. Backed by `resource_edit_counts`. */
+    getEditCounts: async () => {
+      const { data, error } = await client
+        .from("resource_edit_counts")
+        .select("*");
 
       if (error) {
         throw error;
       }
 
-      return (data ?? []) as ResourceEdit[];
+      return (data ?? []) as ResourceEditCount[];
+    },
+    /** Full history of decided (APPROVED/REJECTED) edits, most recent first
+     * within each resource. Backed by `resource_change_log`. */
+    getChangeLog: async () => {
+      const { data, error } = await client
+        .from("resource_change_log")
+        .select("*");
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as ResourceChangeLogEntry[];
+    },
+    getChangeLogForResource: async (resourceId: number) => {
+      const { data, error } = await client
+        .from("resource_change_log")
+        .select("*")
+        .eq("resource_id", resourceId)
+        .order("reviewed_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as ResourceChangeLogEntry[];
+    },
+
+    getCounts: async () => {
+      const [total, pending] = await Promise.all([
+        table.select("id", { count: "exact", head: true }),
+        table
+          .select("id", { count: "exact", head: true })
+          .eq("review_status", "PENDING"),
+      ]);
+
+      if (total.error) {
+        throw total.error;
+      }
+      if (pending.error) {
+        throw pending.error;
+      }
+
+      return { total: total.count ?? 0, pending: pending.count ?? 0 };
     },
     getById: async (id: number) => {
       const { data, error } = await table

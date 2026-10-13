@@ -33,7 +33,10 @@ import { getResourceEditAPI } from "~/api/resource-edits/methods";
 import { getResourceEntryAPI } from "~/api/resources/methods";
 import { userContext } from "~/context/user";
 import { authMiddleware } from "~/middleware/auth";
-import type { ResourceEdit } from "~/types/ResourceEdit";
+import type {
+  ResourceChangeLogEntry,
+  ResourceEdit,
+} from "~/types/ResourceEdit";
 import type {
   BathroomTag,
   DispenserType,
@@ -59,7 +62,7 @@ const DISPENSER_TYPES: DispenserType[] = [
   "SINK",
   "JUG",
   "SODA_MACHINE",
-  "PITCHER",
+  "VESSEL",
   "WATER_COOLER",
 ];
 const WATER_TAGS: WaterTag[] = [
@@ -93,6 +96,7 @@ const BATHROOM_TAGS: BathroomTag[] = [
   "GENDER_NEUTRAL",
   "CHANGING_TABLE",
   "SINGLE_OCCUPANCY",
+  "HAS_FOUNTAIN",
   "FAMILY",
 ];
 
@@ -122,12 +126,20 @@ type EditableValues = {
   food: {
     food_type: FoodType[];
     distribution_type: DistributionType[];
-    organization_type: OrganizationType[];
+    organization_type: OrganizationType | "";
     organization_name: string;
     organization_url: string;
+    tags: string[];
   };
   forage: { forage_type: ForageType[]; tags: ForageTag[] };
   bathroom: { tags: BathroomTag[] };
+};
+
+// phlask-map stores organization_type as a single value, but rows written
+// before its January 2026 schema change hold an array — accept either.
+const toOrganizationType = (value: unknown): OrganizationType | "" => {
+  const single = Array.isArray(value) ? value[0] : value;
+  return typeof single === "string" ? (single as OrganizationType) : "";
 };
 
 const toEditableValues = (edit: ResourceEdit): EditableValues => ({
@@ -149,9 +161,11 @@ const toEditableValues = (edit: ResourceEdit): EditableValues => ({
   food: {
     food_type: edit.food?.food_type ?? [],
     distribution_type: edit.food?.distribution_type ?? [],
-    organization_type: edit.food?.organization_type ?? [],
+    organization_type: toOrganizationType(edit.food?.organization_type),
     organization_name: edit.food?.organization_name ?? "",
     organization_url: edit.food?.organization_url ?? "",
+    // Not editable here, but carried through so saving doesn't drop it.
+    tags: edit.food?.tags ?? [],
   },
   forage: {
     forage_type: edit.forage?.forage_type ?? [],
@@ -173,16 +187,17 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   const edit = await editAPI.getById(id);
 
   let resource: ResourceEntry | null = null;
+  let changeLog: ResourceChangeLogEntry[] = [];
   if (edit.mapped_resource !== null) {
-    try {
-      const resourceAPI = getResourceEntryAPI(client);
-      resource = await resourceAPI.getById(edit.mapped_resource);
-    } catch {
-      resource = null;
-    }
+    const resourceAPI = getResourceEntryAPI(client);
+
+    [resource, changeLog] = await Promise.all([
+      resourceAPI.getById(edit.mapped_resource).catch(() => null),
+      editAPI.getChangeLogForResource(edit.mapped_resource).catch(() => []),
+    ]);
   }
 
-  return { edit, resource };
+  return { edit, resource, changeLog };
 };
 
 export const action: ActionFunction = async ({ request, params, context }) => {
@@ -238,9 +253,10 @@ export const action: ActionFunction = async ({ request, params, context }) => {
 };
 
 const ReviewDetail = () => {
-  const { edit, resource } = useLoaderData<{
+  const { edit, resource, changeLog } = useLoaderData<{
     edit: ResourceEdit;
     resource: ResourceEntry | null;
+    changeLog: ResourceChangeLogEntry[];
   }>();
   const actionData = useActionData<{ message?: string }>();
   const fetcher = useFetcher<{ message?: string; ok?: boolean }>();
@@ -306,6 +322,7 @@ const ReviewDetail = () => {
         values.resource_type === "FOOD"
           ? {
               ...values.food,
+              organization_type: values.food.organization_type || undefined,
               organization_name: values.food.organization_name || undefined,
               organization_url: values.food.organization_url || undefined,
             }
@@ -384,6 +401,45 @@ const ReviewDetail = () => {
           The resource this edit targets (#{edit.mapped_resource}) could not be
           found — it may have been deleted.
         </Alert>
+      )}
+
+      {!isNew && changeLog.length > 0 && (
+        <Paper variant="outlined" sx={{ p: 2.5 }}>
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            Change history
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableBody>
+                {changeLog.map((entry) => (
+                  <TableRow key={entry.edit_id}>
+                    <TableCell>
+                      <Chip
+                        label={entry.review_status}
+                        size="small"
+                        color={statusChipColor(entry.review_status)}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {entry.reviewed_by ?? "—"}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {entry.reviewed_at
+                        ? new Date(entry.reviewed_at).toLocaleString(
+                            undefined,
+                            { dateStyle: "medium", timeStyle: "short" },
+                          )
+                        : "—"}
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {entry.review_notes ?? "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       )}
 
       <TableContainer component={Paper} variant="outlined">
@@ -671,17 +727,25 @@ const ReviewDetail = () => {
                   <TextField {...params} label="Distribution types" />
                 )}
               />
-              <Autocomplete
-                multiple
+              <TextField
+                select
                 size="small"
-                options={ORGANIZATION_TYPES}
+                label="Organization type"
                 value={values.food.organization_type}
                 disabled={!isPending}
-                onChange={(_, val) => setFood("organization_type", val)}
-                renderInput={(params) => (
-                  <TextField {...params} label="Organization types" />
-                )}
-              />
+                onChange={(e) =>
+                  setFood(
+                    "organization_type",
+                    e.target.value as OrganizationType,
+                  )
+                }
+              >
+                {ORGANIZATION_TYPES.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </TextField>
               <TextField
                 size="small"
                 label="Organization name"
