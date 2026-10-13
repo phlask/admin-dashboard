@@ -62,7 +62,7 @@ const DISPENSER_TYPES: DispenserType[] = [
   "SINK",
   "JUG",
   "SODA_MACHINE",
-  "PITCHER",
+  "VESSEL",
   "WATER_COOLER",
 ];
 const WATER_TAGS: WaterTag[] = [
@@ -96,6 +96,7 @@ const BATHROOM_TAGS: BathroomTag[] = [
   "GENDER_NEUTRAL",
   "CHANGING_TABLE",
   "SINGLE_OCCUPANCY",
+  "HAS_FOUNTAIN",
   "FAMILY",
 ];
 
@@ -125,12 +126,20 @@ type EditableValues = {
   food: {
     food_type: FoodType[];
     distribution_type: DistributionType[];
-    organization_type: OrganizationType[];
+    organization_type: OrganizationType | "";
     organization_name: string;
     organization_url: string;
+    tags: string[];
   };
   forage: { forage_type: ForageType[]; tags: ForageTag[] };
   bathroom: { tags: BathroomTag[] };
+};
+
+// phlask-map stores organization_type as a single value, but rows written
+// before its January 2026 schema change hold an array — accept either.
+const toOrganizationType = (value: unknown): OrganizationType | "" => {
+  const single = Array.isArray(value) ? value[0] : value;
+  return typeof single === "string" ? (single as OrganizationType) : "";
 };
 
 const toEditableValues = (edit: ResourceEdit): EditableValues => ({
@@ -152,9 +161,11 @@ const toEditableValues = (edit: ResourceEdit): EditableValues => ({
   food: {
     food_type: edit.food?.food_type ?? [],
     distribution_type: edit.food?.distribution_type ?? [],
-    organization_type: edit.food?.organization_type ?? [],
+    organization_type: toOrganizationType(edit.food?.organization_type),
     organization_name: edit.food?.organization_name ?? "",
     organization_url: edit.food?.organization_url ?? "",
+    // Not editable here, but carried through so saving doesn't drop it.
+    tags: edit.food?.tags ?? [],
   },
   forage: {
     forage_type: edit.forage?.forage_type ?? [],
@@ -311,6 +322,7 @@ const ReviewDetail = () => {
         values.resource_type === "FOOD"
           ? {
               ...values.food,
+              organization_type: values.food.organization_type || undefined,
               organization_name: values.food.organization_name || undefined,
               organization_url: values.food.organization_url || undefined,
             }
@@ -715,17 +727,25 @@ const ReviewDetail = () => {
                   <TextField {...params} label="Distribution types" />
                 )}
               />
-              <Autocomplete
-                multiple
+              <TextField
+                select
                 size="small"
-                options={ORGANIZATION_TYPES}
+                label="Organization type"
                 value={values.food.organization_type}
                 disabled={!isPending}
-                onChange={(_, val) => setFood("organization_type", val)}
-                renderInput={(params) => (
-                  <TextField {...params} label="Organization types" />
-                )}
-              />
+                onChange={(e) =>
+                  setFood(
+                    "organization_type",
+                    e.target.value as OrganizationType,
+                  )
+                }
+              >
+                {ORGANIZATION_TYPES.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </TextField>
               <TextField
                 size="small"
                 label="Organization name"
