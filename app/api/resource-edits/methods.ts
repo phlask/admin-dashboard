@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
-  EditReviewStatus,
   ResourceChangeLogEntry,
   ResourceEdit,
   ResourceEditCount,
@@ -96,21 +95,6 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
       }
 
       return { total: total.count ?? 0, pending: pending.count ?? 0 };
-    },
-    getList: async (params: { review_status?: EditReviewStatus } = {}) => {
-      let query = table.select("*").order("submitted_at", { ascending: false });
-
-      if (params.review_status) {
-        query = query.eq("review_status", params.review_status);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      return (data ?? []) as ResourceEdit[];
     },
     getById: async (id: number) => {
       const { data, error } = await table

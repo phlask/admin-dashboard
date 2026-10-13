@@ -156,6 +156,7 @@ function ReviewQueueTable<T extends { id: number }>({
   const table = useReactTable({
     data,
     columns,
+    getRowId: (row) => String(row.id),
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
