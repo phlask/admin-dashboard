@@ -215,6 +215,24 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
 
       return data;
     },
+    /** Re-targets a PENDING brand-new submission at an existing resource, so
+     * it is reviewed (and approved) as an edit of that resource instead of
+     * creating a duplicate pin. */
+    linkToResource: async (id: number, resourceId: number) => {
+      const { data, error } = await table
+        .update({ mapped_resource: resourceId })
+        .eq("id", id)
+        .eq("review_status", "PENDING")
+        .is("mapped_resource", null)
+        .select()
+        .single<ResourceEdit>();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
     /** Approves the edit via the `approve_edit` RPC — applies it to `resources`
      * (updating the mapped resource, or inserting a new one) so the change
      * goes live on the map. Returns the resulting `resources` row. */

@@ -45,7 +45,10 @@ import {
 } from "react-router";
 import { getDatabaseClient } from "~/api/client.server";
 import { getResourceEditAPI } from "~/api/resource-edits/methods";
-import { getResourceEntryAPI } from "~/api/resources/methods";
+import {
+  getNearbyResources,
+  getResourceEntryAPI,
+} from "~/api/resources/methods";
 import ResourceLocationPanel from "~/components/ResourceLocationPanel";
 import { userContext } from "~/context/user";
 import { authMiddleware } from "~/middleware/auth";
@@ -68,6 +71,11 @@ import type {
   WaterTag,
 } from "~/types/ResourceEntry";
 import { statusChipColor } from "~/utils/chipColors";
+import {
+  DUPLICATE_SEARCH_RADIUS_METERS,
+  type DuplicateCandidate,
+  rankDuplicates,
+} from "~/utils/duplicateMatch";
 import { valuesDiffer } from "~/utils/resourceDiff";
 
 export const middleware = [authMiddleware];
@@ -240,7 +248,26 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     ]);
   }
 
-  return { edit, resource, changeLog, competingEdits };
+  let duplicates: DuplicateCandidate[] = [];
+  if (
+    edit.mapped_resource === null &&
+    edit.review_status === "PENDING" &&
+    Number.isFinite(edit.latitude) &&
+    Number.isFinite(edit.longitude)
+  ) {
+    const nearby = await getNearbyResources(
+      client,
+      {
+        latitude: edit.latitude,
+        longitude: edit.longitude,
+        gpId: edit.gp_id,
+      },
+      DUPLICATE_SEARCH_RADIUS_METERS,
+    ).catch(() => []);
+    duplicates = rankDuplicates(edit, nearby).slice(0, 5);
+  }
+
+  return { edit, resource, changeLog, competingEdits, duplicates };
 };
 
 export const action: ActionFunction = async ({ request, params, context }) => {
@@ -271,6 +298,28 @@ export const action: ActionFunction = async ({ request, params, context }) => {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+
+  if (intent === "link") {
+    const resourceId = Number(formData.get("resourceId"));
+    if (!Number.isSafeInteger(resourceId) || resourceId <= 0) {
+      return data({ message: "Unknown resource" }, { status: 400 });
+    }
+    try {
+      await editAPI.linkToResource(id, resourceId);
+    } catch (error) {
+      return data(
+        {
+          message:
+            error instanceof Error
+              ? `Could not link to resource #${resourceId}: ${error.message}`
+              : `Could not link to resource #${resourceId}.`,
+        },
+        { status: 400 },
+      );
+    }
+    // Reload as an edit of that resource, with the field-by-field compare.
+    return redirect(`/reviews/${id}`, { headers });
+  }
 
   if (intent !== "approve" && intent !== "reject") {
     return data({ message: "Unknown action" }, { status: 400 });
@@ -487,12 +536,14 @@ const findChangedFields = (
 };
 
 const ReviewDetail = () => {
-  const { edit, resource, changeLog, competingEdits } = useLoaderData<{
-    edit: ResourceEdit;
-    resource: ResourceEntry | null;
-    changeLog: ResourceChangeLogEntry[];
-    competingEdits: CompetingEdit[];
-  }>();
+  const { edit, resource, changeLog, competingEdits, duplicates } =
+    useLoaderData<{
+      edit: ResourceEdit;
+      resource: ResourceEntry | null;
+      changeLog: ResourceChangeLogEntry[];
+      competingEdits: CompetingEdit[];
+      duplicates: DuplicateCandidate[];
+    }>();
   const [rejectOpen, setRejectOpen] = useState(false);
   const actionData = useActionData<{ message?: string }>();
   const fetcher = useFetcher<{ message?: string; ok?: boolean }>();
@@ -638,7 +689,7 @@ const ReviewDetail = () => {
       </Box>
       <Box>
         <Typography variant="h5" fontWeight={600} gutterBottom>
-          Review proposed edit
+          {isNew ? "Review new site submission" : "Review proposed edit"}
         </Typography>
         <Stack direction="row" gap={1} alignItems="center">
           <Chip
@@ -702,6 +753,95 @@ const ReviewDetail = () => {
             ))}
           </Box>
         </Alert>
+      )}
+
+      {isNew && duplicates.length > 0 && (
+        <Paper variant="outlined" sx={{ p: 2.5, borderColor: "warning.main" }}>
+          <Typography variant="subtitle1" fontWeight={600}>
+            Possible duplicates
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Existing resources within {DUPLICATE_SEARCH_RADIUS_METERS} m that
+            look like the same place. If this submission describes one of them,
+            review it as an edit of that resource instead of adding a second
+            pin.
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableBody>
+                {duplicates.map((candidate) => (
+                  <TableRow key={candidate.resource.id}>
+                    <TableCell sx={{ width: 140 }}>
+                      <Chip
+                        size="small"
+                        color={
+                          candidate.level === "high"
+                            ? "error"
+                            : candidate.level === "medium"
+                              ? "warning"
+                              : "default"
+                        }
+                        label={`${
+                          candidate.level === "high"
+                            ? "High"
+                            : candidate.level === "medium"
+                              ? "Medium"
+                              : "Low"
+                        } · ${Math.round(candidate.confidence * 100)}%`}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <MuiLink
+                        component={RouterLink}
+                        to={`/resources/${candidate.resource.id}`}
+                        fontWeight={600}
+                      >
+                        {candidate.resource.name ||
+                          `Resource #${candidate.resource.id}`}
+                      </MuiLink>
+                      <Typography variant="body2" color="text.secondary">
+                        {candidate.resource.address || "No address"} ·{" "}
+                        {candidate.resource.resource_type}
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ color: "text.secondary" }}>
+                      {candidate.reasons.join(" · ")}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Form
+                        method="post"
+                        onSubmit={(event) => {
+                          if (
+                            !window.confirm(
+                              `Review this submission as an edit of #${candidate.resource.id}? It will no longer create a new resource.`,
+                            )
+                          ) {
+                            event.preventDefault();
+                          }
+                        }}
+                      >
+                        <input type="hidden" name="intent" value="link" />
+                        <input
+                          type="hidden"
+                          name="resourceId"
+                          value={candidate.resource.id}
+                        />
+                        <Button
+                          type="submit"
+                          size="small"
+                          variant="outlined"
+                          sx={{ whiteSpace: "nowrap" }}
+                        >
+                          Treat as edit of #{candidate.resource.id}
+                        </Button>
+                      </Form>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       )}
 
       {isNew && (

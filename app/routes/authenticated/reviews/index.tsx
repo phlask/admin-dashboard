@@ -22,6 +22,7 @@ import { useMemo, useState } from "react";
 import { type LoaderFunction, useLoaderData, useNavigate } from "react-router";
 import { getDatabaseClient } from "~/api/client.server";
 import { getResourceEditAPI } from "~/api/resource-edits/methods";
+import { getNearbyResources } from "~/api/resources/methods";
 import { authMiddleware } from "~/middleware/auth";
 import type {
   ResourceEdit,
@@ -32,8 +33,21 @@ import {
   resourceTypeChipColor,
   resourceTypeChipIcon,
 } from "~/utils/chipColors";
+import {
+  DUPLICATE_SEARCH_RADIUS_METERS,
+  type DuplicateCandidate,
+  rankDuplicates,
+} from "~/utils/duplicateMatch";
 
 export const middleware = [authMiddleware];
+
+const DUPLICATE_CHECK_LIMIT = 50;
+
+type DuplicateSummary = {
+  resourceId: number;
+  level: DuplicateCandidate["level"];
+  confidence: number;
+};
 
 export const loader: LoaderFunction = async ({ request }) => {
   const { client } = getDatabaseClient(request);
@@ -45,7 +59,35 @@ export const loader: LoaderFunction = async ({ request }) => {
     editAPI.getEditCounts(),
   ]);
 
-  return { edits, newResources, editCounts };
+  // Flag likely duplicates up front (#35). One small bounding-box query per
+  // submission; capped so a flood of submissions can't fan out unbounded.
+  const topDuplicates: Record<number, DuplicateSummary> = {};
+  await Promise.all(
+    newResources.slice(0, DUPLICATE_CHECK_LIMIT).map(async (edit) => {
+      if (!Number.isFinite(edit.latitude) || !Number.isFinite(edit.longitude)) {
+        return;
+      }
+      const nearby = await getNearbyResources(
+        client,
+        {
+          latitude: edit.latitude,
+          longitude: edit.longitude,
+          gpId: edit.gp_id,
+        },
+        DUPLICATE_SEARCH_RADIUS_METERS,
+      ).catch(() => []);
+      const [best] = rankDuplicates(edit, nearby, 0.5);
+      if (best) {
+        topDuplicates[edit.id] = {
+          resourceId: best.resource.id,
+          level: best.level,
+          confidence: best.confidence,
+        };
+      }
+    }),
+  );
+
+  return { edits, newResources, editCounts, topDuplicates };
 };
 
 type EditRowData = {
@@ -63,6 +105,7 @@ type NewRowData = {
   name: string | null;
   resource_type: ResourceEdit["resource_type"];
   submitted_at: string;
+  duplicate: DuplicateSummary | null;
 };
 
 const submittedColumn = <
@@ -133,6 +176,27 @@ const newColumns: ColumnDef<NewRowData>[] = [
         color={resourceTypeChipColor(row.original.resource_type)}
       />
     ),
+  },
+  {
+    id: "duplicate",
+    accessorFn: (row) => row.duplicate?.confidence ?? 0,
+    header: "Possible duplicate",
+    cell: ({ row }) => {
+      const duplicate = row.original.duplicate;
+      if (!duplicate) {
+        return "—";
+      }
+      return (
+        <Chip
+          size="small"
+          variant="outlined"
+          color={duplicate.level === "high" ? "error" : "warning"}
+          label={`#${duplicate.resourceId} · ${Math.round(
+            duplicate.confidence * 100,
+          )}%`}
+        />
+      );
+    },
   },
   submittedColumn<NewRowData>(),
 ];
@@ -218,10 +282,11 @@ function ReviewQueueTable<T extends { id: number }>({
 }
 
 const ReviewsQueue = () => {
-  const { edits, newResources, editCounts } = useLoaderData<{
+  const { edits, newResources, editCounts, topDuplicates } = useLoaderData<{
     edits: ResourceEditQueueRow[];
     newResources: ResourceEdit[];
     editCounts: ResourceEditCount[];
+    topDuplicates: Record<number, DuplicateSummary>;
   }>();
 
   const pendingCountByResource = useMemo(
@@ -252,8 +317,9 @@ const ReviewsQueue = () => {
         name: edit.name ?? null,
         resource_type: edit.resource_type,
         submitted_at: edit.submitted_at,
+        duplicate: topDuplicates[edit.id] ?? null,
       })),
-    [newResources],
+    [newResources, topDuplicates],
   );
 
   return (

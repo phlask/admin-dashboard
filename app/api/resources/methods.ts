@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GetModelAPI } from "~/api/types";
 import type {
   ResourceEntry,
@@ -129,3 +130,51 @@ export const getResourceEntryAPI: GetModelAPI<
 };
 
 export default getResourceEntryAPI;
+
+/** Rough metres-per-degree of latitude; good enough for a search box. */
+const METERS_PER_DEGREE = 111_320;
+
+/**
+ * Resources inside a square box around a point (plus any sharing the Google
+ * Place ID), for duplicate detection. The box is a cheap index-friendly
+ * pre-filter; callers do the exact distance check.
+ */
+export const getNearbyResources = async (
+  client: SupabaseClient,
+  point: { latitude: number; longitude: number; gpId?: string | null },
+  radiusMeters: number,
+  limit = 50,
+) => {
+  const latDelta = radiusMeters / METERS_PER_DEGREE;
+  const lngDelta =
+    radiusMeters /
+    (METERS_PER_DEGREE *
+      Math.max(Math.cos((point.latitude * Math.PI) / 180), 0.01));
+
+  const [nearby, samePlace] = await Promise.all([
+    client
+      .from(TABLE_NAME)
+      .select("*")
+      .gte("latitude", point.latitude - latDelta)
+      .lte("latitude", point.latitude + latDelta)
+      .gte("longitude", point.longitude - lngDelta)
+      .lte("longitude", point.longitude + lngDelta)
+      .limit(limit),
+    point.gpId
+      ? client.from(TABLE_NAME).select("*").eq("gp_id", point.gpId).limit(5)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (nearby.error) {
+    throw nearby.error;
+  }
+  if (samePlace.error) {
+    throw samePlace.error;
+  }
+
+  const byId = new Map<number, ResourceEntry & { id: number }>();
+  for (const row of [...(nearby.data ?? []), ...(samePlace.data ?? [])]) {
+    byId.set(Number(row.id), row as ResourceEntry & { id: number });
+  }
+  return [...byId.values()];
+};
