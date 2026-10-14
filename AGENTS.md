@@ -30,25 +30,35 @@ pnpm typecheck                   # react-router typegen + tsc
 pnpm exec biome ci .             # exactly what CI runs on every PR
 pnpm exec biome check --write .  # auto-fix formatting / safe lint fixes
 pnpm build                       # production build
+pnpm test                        # Vitest unit tests (app/**/*.test.ts)
+pnpm test:e2e                    # Playwright end-to-end tests (e2e/)
 ```
 
-There is no unit-test suite yet. **Before you say a change is done, all of
-`pnpm typecheck`, `pnpm exec biome ci .` and `pnpm build` must pass.** Say so
-explicitly in your summary, and say what you could not verify (e.g. no
-Supabase credentials, no browser).
+**Before you say a change is done, `pnpm typecheck`, `pnpm exec biome ci .`,
+`pnpm test` and `pnpm build` must pass, and `pnpm test:e2e` too if you
+touched a page or a flow.** Say so explicitly in your summary, and say what
+you could not verify (e.g. no Supabase credentials, no browser).
+
+The end-to-end tests run the production build against `e2e/mock-supabase.mjs`,
+an in-memory stand-in for Supabase auth, the PostgREST filters the app uses
+and the review RPCs. When you add a query or RPC, extend the mock so the
+tests keep reflecting real behaviour, and add a spec for new flows.
 
 ## Code map
 
 | Path | What lives there |
 |---|---|
 | `app/routes.ts` | Route table. New pages must be registered here. |
-| `app/routes/authenticated/` | Pages behind login. Each exports `middleware = [authMiddleware]`. |
+| `app/routes/authenticated/` | Pages behind login (dashboard, reviews, resources + history/rollback, providers, audit log, account). Each exports `middleware = [authMiddleware]`. |
 | `app/routes/unauthenticated/` | Login, forgot/reset password, email confirm. |
 | `app/api/<entity>/methods.ts` | Data access: `get<Entity>API(client)` returning async methods that throw on Supabase errors. |
 | `app/api/client.server.ts` | `getDatabaseClient(request)` → `{ client, headers }`. |
 | `app/types/` | Domain types mirroring DB rows (`ResourceEntry`, `ResourceEdit`, `Provider`). |
 | `app/middleware/auth.ts`, `app/context/user.ts` | Auth middleware and the signed-in user context. |
 | `app/theme/` | MUI theme, light/dark mode (cookie-backed, SSR-safe). |
+| `app/utils/` | Pure helpers (field diffing, duplicate scoring, ...) with `*.test.ts` unit tests beside them. |
+| `e2e/` | Playwright specs, fixtures and the Supabase mock. |
+| `deploy/amplify/` | Amplify Hosting server entry, routing manifest, postbuild script. |
 | `supabase/migrations/` | Forward SQL migrations, applied in filename order. |
 | `supabase/rollback/` | One `*.down.sql` per migration. |
 | `docs/` | Scoping notes and the implementation log. |
@@ -71,6 +81,11 @@ Supabase credentials, no browser).
   `reject_edit`, `rollback_to_edit`), never through direct table updates —
   the RPCs are what set `reviewed_by` / `reviewed_at` and apply the edit
   atomically.
+- On a `resource_edits` row a NULL column means "no change" when approved;
+  clearing a field on purpose means listing it in `cleared_fields`. Keep
+  edits sparse: send only the fields that actually change.
+- `audit_log` is append-only and written by triggers. Never write to it from
+  the app or weaken its guard trigger.
 - Keep queries server-side and aggregate in the database (a view), not in JS:
   PostgREST silently truncates responses at `max-rows` (1000 by default), so
   JS-side tallies under-report without any error.
@@ -120,7 +135,8 @@ Supabase credentials, no browser).
 
 ## Before you finish, check
 
-1. `pnpm typecheck`, `pnpm exec biome ci .`, `pnpm build` all pass.
+1. `pnpm typecheck`, `pnpm exec biome ci .`, `pnpm test`, `pnpm build` (and
+   `pnpm test:e2e` for UI changes) all pass.
 2. New pages are registered in `app/routes.ts` and protected by
    `authMiddleware` if they show non-public data.
 3. Every new migration has a rollback, uses `security_invoker` for views, and
