@@ -1,5 +1,6 @@
 import Business from "@mui/icons-material/Business";
 import Dashboard from "@mui/icons-material/Dashboard";
+import History from "@mui/icons-material/History";
 import Logout from "@mui/icons-material/Logout";
 import Place from "@mui/icons-material/Place";
 import RateReview from "@mui/icons-material/RateReview";
@@ -148,6 +149,12 @@ export default function DashboardLayout() {
               <SidebarNavLink to="/providers">
                 <Business fontSize="small" />
                 Providers
+              </SidebarNavLink>
+            </li>
+            <li>
+              <SidebarNavLink to="/audit-logs">
+                <History fontSize="small" />
+                Audit log
               </SidebarNavLink>
             </li>
           </Box>

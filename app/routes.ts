@@ -13,6 +13,7 @@ export default [
     route("resources", "routes/authenticated/resources/index.tsx"),
     route("resources/:id", "routes/authenticated/resources/detail.tsx"),
     route("providers", "routes/authenticated/providers/index.tsx"),
+    route("audit-logs", "routes/authenticated/audit-logs.tsx"),
     route("logout", "routes/authenticated/logout.tsx"),
   ]),
   route("auth", "routes/unauthenticated/_layout.tsx", [
