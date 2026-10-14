@@ -5,9 +5,11 @@ import {
   Box,
   Button,
   Chip,
+  FormControlLabel,
   MenuItem,
   Paper,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -16,7 +18,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { type SubmitEvent, useEffect, useState } from "react";
+import { alpha } from "@mui/material/styles";
+import {
+  type ReactNode,
+  type SubmitEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   type ActionFunction,
   data,
@@ -48,15 +57,24 @@ import type {
   ForageType,
   OrganizationType,
   ResourceEntry,
+  ResourceStatus,
   ResourceType,
   WaterTag,
 } from "~/types/ResourceEntry";
 import { statusChipColor } from "~/utils/chipColors";
+import { valuesDiffer } from "~/utils/resourceDiff";
 
 export const middleware = [authMiddleware];
 
 const RESOURCE_TYPES: ResourceType[] = ["WATER", "FOOD", "FORAGE", "BATHROOM"];
 const ENTRY_TYPES: EntryType[] = ["OPEN", "RESTRICTED", "UNSURE"];
+const RESOURCE_STATUSES: ResourceStatus[] = [
+  "OPERATIONAL",
+  "TEMPORARILY_CLOSED",
+  "PERMANENTLY_CLOSED",
+  "NONOPERATIONAL",
+  "HIDDEN",
+];
 const DISPENSER_TYPES: DispenserType[] = [
   "DRINKING_FOUNTAIN",
   "BOTTLE_FILLER",
@@ -114,6 +132,7 @@ const formatValue = (value: unknown): string => {
 type EditableValues = {
   name: string;
   resource_type: ResourceType;
+  status: ResourceStatus | "";
   entry_type: EntryType | "";
   address: string;
   city: string;
@@ -143,9 +162,12 @@ const toOrganizationType = (value: unknown): OrganizationType | "" => {
   return typeof single === "string" ? (single as OrganizationType) : "";
 };
 
-const toEditableValues = (edit: ResourceEdit): EditableValues => ({
+// Accepts the live resource too, so both sides of the compare go through the
+// same normalisation (e.g. legacy array-valued organization_type).
+const toEditableValues = (edit: ResourceEntry): EditableValues => ({
   name: edit.name ?? "",
   resource_type: edit.resource_type,
+  status: edit.status ?? "",
   entry_type: edit.entry_type ?? "",
   address: edit.address ?? "",
   city: edit.city ?? "",
@@ -253,6 +275,142 @@ export const action: ActionFunction = async ({ request, params, context }) => {
   return redirect("/reviews", { headers });
 };
 
+/** The proposed-value inputs wrap instead of truncating (so a long address
+ * reads in full next to the current one) but must stay single-line values. */
+const singleLine = (value: string) => value.replace(/\r?\n/g, " ");
+
+type RowState = { changed: boolean; hidden: boolean };
+
+const changedRowSx = {
+  bgcolor: (theme: { palette: { warning: { main: string } } }) =>
+    alpha(theme.palette.warning.main, 0.08),
+  "& > td:first-of-type": {
+    boxShadow: (theme: { palette: { warning: { main: string } } }) =>
+      `inset 3px 0 0 ${theme.palette.warning.main}`,
+  },
+};
+
+const ChangedChip = () => (
+  <Chip
+    label="Changed"
+    size="small"
+    color="warning"
+    variant="outlined"
+    sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
+  />
+);
+
+const FieldRow = ({
+  label,
+  current,
+  changed,
+  hidden,
+  children,
+}: RowState & { label: string; current: ReactNode; children: ReactNode }) => {
+  if (hidden) {
+    return null;
+  }
+
+  return (
+    <TableRow sx={changed ? changedRowSx : undefined}>
+      <TableCell sx={{ color: "text.secondary" }}>
+        {label}
+        {changed && <ChangedChip />}
+      </TableCell>
+      <TableCell sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+        {current}
+      </TableCell>
+      <TableCell sx={{ wordBreak: "break-word" }}>{children}</TableCell>
+    </TableRow>
+  );
+};
+
+const DetailsPanel = ({
+  title,
+  changed,
+  hidden,
+  children,
+}: RowState & { title: string; children: ReactNode }) => {
+  if (hidden) {
+    return null;
+  }
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2.5,
+        ...(changed && {
+          borderColor: "warning.main",
+          bgcolor: (theme) => alpha(theme.palette.warning.main, 0.04),
+        }),
+      }}
+    >
+      <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+        {title}
+        {changed && <ChangedChip />}
+      </Typography>
+      {children}
+    </Paper>
+  );
+};
+
+/** Fields compared on the review page, in display order. */
+const COMPARED_FIELDS = [
+  "name",
+  "resource_type",
+  "status",
+  "entry_type",
+  "description",
+  "guidelines",
+  "address",
+  "city",
+  "state",
+  "zip_code",
+  "latitude",
+  "longitude",
+  "hours",
+  "images",
+  "details",
+] as const;
+
+type ComparedField = (typeof COMPARED_FIELDS)[number];
+
+const DETAILS_KEY = {
+  WATER: "water",
+  FOOD: "food",
+  FORAGE: "forage",
+  BATHROOM: "bathroom",
+} as const satisfies Record<ResourceType, keyof EditableValues>;
+
+const findChangedFields = (
+  resource: ResourceEntry | null,
+  currentValues: EditableValues | null,
+  edit: ResourceEdit,
+  proposed: EditableValues,
+) => {
+  const changed = new Set<ComparedField>();
+  if (!resource || !currentValues) {
+    return changed;
+  }
+  const detailsKey = DETAILS_KEY[proposed.resource_type];
+  for (const field of COMPARED_FIELDS) {
+    const differs =
+      field === "hours"
+        ? valuesDiffer(resource.hours, edit.hours)
+        : field === "images"
+          ? valuesDiffer(resource.images, edit.images)
+          : field === "details"
+            ? detailsKey !== undefined &&
+              valuesDiffer(currentValues[detailsKey], proposed[detailsKey])
+            : valuesDiffer(currentValues[field], proposed[field]);
+    if (differs) {
+      changed.add(field);
+    }
+  }
+  return changed;
+};
+
 const ReviewDetail = () => {
   const { edit, resource, changeLog } = useLoaderData<{
     edit: ResourceEdit;
@@ -273,6 +431,41 @@ const ReviewDetail = () => {
   const isNew = edit.mapped_resource === null;
   const isPending = edit.review_status === "PENDING";
   const isSaving = fetcher.state !== "idle";
+
+  const savedValues = useMemo(() => toEditableValues(edit), [edit]);
+  const isDirty = valuesDiffer(savedValues, values);
+
+  const currentValues = useMemo(
+    () => (resource ? toEditableValues(resource) : null),
+    [resource],
+  );
+  // Only edits to a resource we could load have something to compare to.
+  const canCompare = currentValues !== null;
+
+  const changedFields = useMemo(
+    () => findChangedFields(resource, currentValues, edit, values),
+    [resource, currentValues, edit, values],
+  );
+  // Rows the submitter changed stay listed even if the reviewer edits them
+  // back to the current value, so a row never vanishes mid-typing.
+  const submittedChanges = useMemo(
+    () => findChangedFields(resource, currentValues, edit, savedValues),
+    [resource, currentValues, edit, savedValues],
+  );
+
+  const [showChangedOnly, setShowChangedOnly] = useState(true);
+
+  const rowState = (field: ComparedField): RowState => {
+    const changed = changedFields.has(field);
+    return {
+      changed,
+      hidden:
+        canCompare &&
+        showChangedOnly &&
+        !changed &&
+        !submittedChanges.has(field),
+    };
+  };
 
   const setField = <K extends keyof EditableValues>(
     key: K,
@@ -309,6 +502,9 @@ const ReviewDetail = () => {
     const payload: Partial<ResourceEntry> = {
       name: values.name || null,
       resource_type: values.resource_type,
+      // status is NOT NULL-able in spirit (every resource has one); leave it
+      // out of the payload rather than blanking it if the field is empty.
+      ...(values.status ? { status: values.status } : {}),
       entry_type: values.entry_type || null,
       address: values.address || null,
       city: values.city || null,
@@ -385,7 +581,7 @@ const ReviewDetail = () => {
               dateStyle: "medium",
               timeStyle: "short",
             })}
-            {edit.creator ? ` by ${edit.creator}` : ""}
+            {edit.submitted_by ? ` by ${edit.submitted_by}` : ""}
           </Typography>
         </Stack>
       </Box>
@@ -452,219 +648,279 @@ const ReviewDetail = () => {
         </Paper>
       )}
 
+      {canCompare && (
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          flexWrap="wrap"
+          gap={1}
+        >
+          <Typography variant="subtitle1" fontWeight={600}>
+            {changedFields.size} of {COMPARED_FIELDS.length} fields changed
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showChangedOnly}
+                onChange={(e) => setShowChangedOnly(e.target.checked)}
+              />
+            }
+            label="Show changed fields only"
+          />
+        </Stack>
+      )}
+
+      {canCompare && changedFields.size === 0 && (
+        <Alert severity="info">
+          This proposal is identical to the live resource.
+        </Alert>
+      )}
+
       <TableContainer component={Paper} variant="outlined">
-        <Table size="small">
+        {/* Fixed layout gives Current and Proposed equal widths, so a long
+            current value can't squeeze the proposed input. */}
+        <Table size="small" sx={{ tableLayout: "fixed" }}>
           <TableBody>
             <TableRow sx={{ "& th, & td": { fontWeight: 600 } }}>
-              <TableCell component="th">Field</TableCell>
+              <TableCell component="th" sx={{ width: 180 }}>
+                Field
+              </TableCell>
               <TableCell component="th">Current</TableCell>
               <TableCell component="th">Proposed</TableCell>
             </TableRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>Name</TableCell>
-              <TableCell>{formatValue(resource?.name)}</TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={values.name}
-                  disabled={!isPending}
-                  onChange={(e) => setField("name", e.target.value)}
-                />
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="Name"
+              current={formatValue(resource?.name)}
+              {...rowState("name")}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                multiline
+                value={values.name}
+                disabled={!isPending}
+                onChange={(e) => setField("name", singleLine(e.target.value))}
+              />
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>
-                Resource type
-              </TableCell>
-              <TableCell>{formatValue(resource?.resource_type)}</TableCell>
-              <TableCell>
-                <TextField
-                  select
-                  size="small"
-                  fullWidth
-                  value={values.resource_type}
-                  disabled={!isPending}
-                  onChange={(e) =>
-                    setField("resource_type", e.target.value as ResourceType)
-                  }
-                >
-                  {RESOURCE_TYPES.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="Resource type"
+              current={formatValue(resource?.resource_type)}
+              {...rowState("resource_type")}
+            >
+              <TextField
+                select
+                size="small"
+                fullWidth
+                value={values.resource_type}
+                disabled={!isPending}
+                onChange={(e) =>
+                  setField("resource_type", e.target.value as ResourceType)
+                }
+              >
+                {RESOURCE_TYPES.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>Entry type</TableCell>
-              <TableCell>{formatValue(resource?.entry_type)}</TableCell>
-              <TableCell>
-                <TextField
-                  select
-                  size="small"
-                  fullWidth
-                  value={values.entry_type}
-                  disabled={!isPending}
-                  onChange={(e) =>
-                    setField("entry_type", e.target.value as EntryType)
-                  }
-                >
-                  {ENTRY_TYPES.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="Status"
+              current={formatValue(resource?.status)}
+              {...rowState("status")}
+            >
+              <TextField
+                select
+                size="small"
+                fullWidth
+                value={values.status}
+                disabled={!isPending}
+                onChange={(e) =>
+                  setField("status", e.target.value as ResourceStatus)
+                }
+              >
+                {RESOURCE_STATUSES.map((status) => (
+                  <MenuItem key={status} value={status}>
+                    {status}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>
-                Description
-              </TableCell>
-              <TableCell>{formatValue(resource?.description)}</TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  multiline
-                  minRows={2}
-                  value={values.description}
-                  disabled={!isPending}
-                  onChange={(e) => setField("description", e.target.value)}
-                />
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="Entry type"
+              current={formatValue(resource?.entry_type)}
+              {...rowState("entry_type")}
+            >
+              <TextField
+                select
+                size="small"
+                fullWidth
+                value={values.entry_type}
+                disabled={!isPending}
+                onChange={(e) =>
+                  setField("entry_type", e.target.value as EntryType)
+                }
+              >
+                {ENTRY_TYPES.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>Guidelines</TableCell>
-              <TableCell>{formatValue(resource?.guidelines)}</TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  multiline
-                  minRows={2}
-                  value={values.guidelines}
-                  disabled={!isPending}
-                  onChange={(e) => setField("guidelines", e.target.value)}
-                />
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="Description"
+              current={formatValue(resource?.description)}
+              {...rowState("description")}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                multiline
+                minRows={2}
+                value={values.description}
+                disabled={!isPending}
+                onChange={(e) => setField("description", e.target.value)}
+              />
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>Address</TableCell>
-              <TableCell>{formatValue(resource?.address)}</TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={values.address}
-                  disabled={!isPending}
-                  onChange={(e) => setField("address", e.target.value)}
-                />
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="Guidelines"
+              current={formatValue(resource?.guidelines)}
+              {...rowState("guidelines")}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                multiline
+                minRows={2}
+                value={values.guidelines}
+                disabled={!isPending}
+                onChange={(e) => setField("guidelines", e.target.value)}
+              />
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>City</TableCell>
-              <TableCell>{formatValue(resource?.city)}</TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={values.city}
-                  disabled={!isPending}
-                  onChange={(e) => setField("city", e.target.value)}
-                />
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="Address"
+              current={formatValue(resource?.address)}
+              {...rowState("address")}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                multiline
+                value={values.address}
+                disabled={!isPending}
+                onChange={(e) =>
+                  setField("address", singleLine(e.target.value))
+                }
+              />
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>State</TableCell>
-              <TableCell>{formatValue(resource?.state)}</TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={values.state}
-                  disabled={!isPending}
-                  onChange={(e) => setField("state", e.target.value)}
-                />
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="City"
+              current={formatValue(resource?.city)}
+              {...rowState("city")}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                multiline
+                value={values.city}
+                disabled={!isPending}
+                onChange={(e) => setField("city", singleLine(e.target.value))}
+              />
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>Zip code</TableCell>
-              <TableCell>{formatValue(resource?.zip_code)}</TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={values.zip_code}
-                  disabled={!isPending}
-                  onChange={(e) => setField("zip_code", e.target.value)}
-                />
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="State"
+              current={formatValue(resource?.state)}
+              {...rowState("state")}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                multiline
+                value={values.state}
+                disabled={!isPending}
+                onChange={(e) => setField("state", singleLine(e.target.value))}
+              />
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>Latitude</TableCell>
-              <TableCell>{formatValue(resource?.latitude)}</TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  type="number"
-                  value={values.latitude}
-                  disabled={!isPending}
-                  onChange={(e) => setField("latitude", Number(e.target.value))}
-                />
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="Zip code"
+              current={formatValue(resource?.zip_code)}
+              {...rowState("zip_code")}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                multiline
+                value={values.zip_code}
+                disabled={!isPending}
+                onChange={(e) =>
+                  setField("zip_code", singleLine(e.target.value))
+                }
+              />
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>Longitude</TableCell>
-              <TableCell>{formatValue(resource?.longitude)}</TableCell>
-              <TableCell>
-                <TextField
-                  size="small"
-                  fullWidth
-                  type="number"
-                  value={values.longitude}
-                  disabled={!isPending}
-                  onChange={(e) =>
-                    setField("longitude", Number(e.target.value))
-                  }
-                />
-              </TableCell>
-            </TableRow>
+            <FieldRow
+              label="Latitude"
+              current={formatValue(resource?.latitude)}
+              {...rowState("latitude")}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={values.latitude}
+                disabled={!isPending}
+                onChange={(e) => setField("latitude", Number(e.target.value))}
+              />
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>Hours</TableCell>
-              <TableCell>{formatValue(resource?.hours)}</TableCell>
-              <TableCell>{formatValue(edit.hours)}</TableCell>
-            </TableRow>
+            <FieldRow
+              label="Longitude"
+              current={formatValue(resource?.longitude)}
+              {...rowState("longitude")}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={values.longitude}
+                disabled={!isPending}
+                onChange={(e) => setField("longitude", Number(e.target.value))}
+              />
+            </FieldRow>
 
-            <TableRow>
-              <TableCell sx={{ color: "text.secondary" }}>Images</TableCell>
-              <TableCell>{formatValue(resource?.images)}</TableCell>
-              <TableCell>{formatValue(edit.images)}</TableCell>
-            </TableRow>
+            <FieldRow
+              label="Hours"
+              current={formatValue(resource?.hours)}
+              {...rowState("hours")}
+            >
+              {formatValue(edit.hours)}
+            </FieldRow>
+
+            <FieldRow
+              label="Images"
+              current={formatValue(resource?.images)}
+              {...rowState("images")}
+            >
+              {formatValue(edit.images)}
+            </FieldRow>
           </TableBody>
         </Table>
       </TableContainer>
 
       {values.resource_type === "WATER" && (
-        <Paper variant="outlined" sx={{ p: 2.5 }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Water details
-          </Typography>
+        <DetailsPanel title="Water details" {...rowState("details")}>
           <Stack direction={{ xs: "column", md: "row" }} gap={3}>
             <Box flex={1}>
               <Typography variant="caption" color="text.secondary">
@@ -697,14 +953,11 @@ const ReviewDetail = () => {
               />
             </Stack>
           </Stack>
-        </Paper>
+        </DetailsPanel>
       )}
 
       {values.resource_type === "FOOD" && (
-        <Paper variant="outlined" sx={{ p: 2.5 }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Food details
-          </Typography>
+        <DetailsPanel title="Food details" {...rowState("details")}>
           <Stack direction={{ xs: "column", md: "row" }} gap={3}>
             <Box flex={1}>
               <Typography variant="caption" color="text.secondary">
@@ -772,14 +1025,11 @@ const ReviewDetail = () => {
               />
             </Stack>
           </Stack>
-        </Paper>
+        </DetailsPanel>
       )}
 
       {values.resource_type === "FORAGE" && (
-        <Paper variant="outlined" sx={{ p: 2.5 }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Forage details
-          </Typography>
+        <DetailsPanel title="Forage details" {...rowState("details")}>
           <Stack direction={{ xs: "column", md: "row" }} gap={3}>
             <Box flex={1}>
               <Typography variant="caption" color="text.secondary">
@@ -812,14 +1062,11 @@ const ReviewDetail = () => {
               />
             </Stack>
           </Stack>
-        </Paper>
+        </DetailsPanel>
       )}
 
       {values.resource_type === "BATHROOM" && (
-        <Paper variant="outlined" sx={{ p: 2.5 }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Bathroom details
-          </Typography>
+        <DetailsPanel title="Bathroom details" {...rowState("details")}>
           <Stack direction={{ xs: "column", md: "row" }} gap={3}>
             <Box flex={1}>
               <Typography variant="caption" color="text.secondary">
@@ -841,7 +1088,7 @@ const ReviewDetail = () => {
               />
             </Stack>
           </Stack>
-        </Paper>
+        </DetailsPanel>
       )}
 
       {fetcher.data?.message && (
@@ -852,6 +1099,13 @@ const ReviewDetail = () => {
 
       {actionData?.message && (
         <Alert severity="error">{actionData.message}</Alert>
+      )}
+
+      {isPending && isDirty && (
+        <Alert severity="warning">
+          You have unsaved changes. Approving applies the saved proposal, so
+          save your changes first (or reload the page to discard them).
+        </Alert>
       )}
 
       {isPending && (
@@ -875,6 +1129,7 @@ const ReviewDetail = () => {
                 value="approve"
                 variant="contained"
                 color="success"
+                disabled={isDirty}
               >
                 Approve
               </Button>
