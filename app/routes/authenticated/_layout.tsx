@@ -1,3 +1,4 @@
+import AccountCircle from "@mui/icons-material/AccountCircle";
 import Business from "@mui/icons-material/Business";
 import Dashboard from "@mui/icons-material/Dashboard";
 import History from "@mui/icons-material/History";
@@ -155,6 +156,12 @@ export default function DashboardLayout() {
               <SidebarNavLink to="/audit-logs">
                 <History fontSize="small" />
                 Audit log
+              </SidebarNavLink>
+            </li>
+            <li>
+              <SidebarNavLink to="/account">
+                <AccountCircle fontSize="small" />
+                Account
               </SidebarNavLink>
             </li>
           </Box>
