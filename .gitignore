@@ -5,7 +5,6 @@
 # React Router
 /.react-router/
 /build/
-/docker/build/
 
 # Amplify build output
 /.amplify-hosting/
@@ -16,3 +15,6 @@ docs/next-up.md
 # Test output
 /test-results/
 /playwright-report/
+
+# Claude Code per-user settings
+.claude/settings.local.json
