@@ -50,20 +50,10 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
         throw error;
       }
 
-      return (data ?? []) as ResourceEditCount[];
-    },
-    /** Full history of decided (APPROVED/REJECTED) edits, most recent first
-     * within each resource. Backed by `resource_change_log`. */
-    getChangeLog: async () => {
-      const { data, error } = await client
-        .from("resource_change_log")
-        .select("*");
-
-      if (error) {
-        throw error;
-      }
-
-      return (data ?? []) as ResourceChangeLogEntry[];
+      return (data ?? []).map((row) => ({
+        resource_id: Number(row.resource_id),
+        pending_count: Number(row.pending_count),
+      })) as ResourceEditCount[];
     },
     getChangeLogForResource: async (resourceId: number) => {
       const { data, error } = await client
@@ -77,6 +67,53 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
       }
 
       return (data ?? []) as ResourceChangeLogEntry[];
+    },
+
+    /** Dashboard aggregates, computed in the DB so they aren't truncated by
+     * PostgREST's max-rows cap. Backed by the `resource_edit_*_counts` and
+     * `resource_edit_pending_by_type` views. */
+    getStats: async (limit = 5) => {
+      const [submitters, approvers, pendingByType] = await Promise.all([
+        client
+          .from("resource_edit_submitter_counts")
+          .select("submitted_by, submission_count")
+          .order("submission_count", { ascending: false })
+          .order("submitted_by", { ascending: true })
+          .limit(limit),
+        client
+          .from("resource_edit_approver_counts")
+          .select("reviewed_by, approval_count")
+          .order("approval_count", { ascending: false })
+          .order("reviewed_by", { ascending: true })
+          .limit(limit),
+        client
+          .from("resource_edit_pending_by_type")
+          .select("resource_type, pending_count"),
+      ]);
+
+      for (const result of [submitters, approvers, pendingByType]) {
+        if (result.error) {
+          throw result.error;
+        }
+      }
+
+      // count(*) is a bigint, which PostgREST may serialise as a string.
+      return {
+        topSubmitters: (submitters.data ?? []).map((row) => ({
+          submitter: row.submitted_by as string,
+          count: Number(row.submission_count),
+        })),
+        topApprovers: (approvers.data ?? []).map((row) => ({
+          reviewer: row.reviewed_by as string,
+          count: Number(row.approval_count),
+        })),
+        pendingByType: Object.fromEntries(
+          (pendingByType.data ?? []).map((row) => [
+            row.resource_type as string,
+            Number(row.pending_count),
+          ]),
+        ) as Record<string, number>,
+      };
     },
 
     getCounts: async () => {

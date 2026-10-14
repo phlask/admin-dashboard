@@ -30,61 +30,16 @@ export const loader: LoaderFunction = async ({ request }) => {
   const { client } = getDatabaseClient(request);
   const editAPI = getResourceEditAPI(client);
 
-  const [counts, pendingEdits, newResources, changeLog] = await Promise.all([
+  const [counts, stats] = await Promise.all([
     editAPI.getCounts(),
-    editAPI.getEditsQueue(),
-    editAPI.getNewResourcesQueue(),
-    editAPI.getChangeLog(),
+    editAPI.getStats(),
   ]);
 
-  const pending = [...pendingEdits, ...newResources];
-
-  const submitterCounts = new Map<string, number>();
-  const approverCounts = new Map<string, number>();
-  const outstandingByType = new Map<string, number>();
-
-  const countSubmitter = (submittedBy: string | null) => {
-    if (!submittedBy) {
-      return;
-    }
-    submitterCounts.set(
-      submittedBy,
-      (submitterCounts.get(submittedBy) ?? 0) + 1,
-    );
-  };
-
-  for (const edit of pending) {
-    countSubmitter(edit.submitted_by);
-    outstandingByType.set(
-      edit.resource_type,
-      (outstandingByType.get(edit.resource_type) ?? 0) + 1,
-    );
-  }
-
-  for (const entry of changeLog) {
-    countSubmitter(entry.submitted_by);
-
-    if (entry.review_status === "APPROVED" && entry.reviewed_by) {
-      approverCounts.set(
-        entry.reviewed_by,
-        (approverCounts.get(entry.reviewed_by) ?? 0) + 1,
-      );
-    }
-  }
-
-  const topSubmitters = [...submitterCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([submitter, count]) => ({ submitter, count }));
-
-  const topApprovers = [...approverCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([reviewer, count]) => ({ reviewer, count }));
+  const { topSubmitters, topApprovers, pendingByType } = stats;
 
   const outstanding = RESOURCE_TYPES.map((type) => ({
     type,
-    count: outstandingByType.get(type) ?? 0,
+    count: pendingByType[type] ?? 0,
   }));
 
   return {
