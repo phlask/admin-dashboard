@@ -10,6 +10,8 @@ export default [
     index("routes/authenticated/dashboard.tsx"),
     route("reviews", "routes/authenticated/reviews/index.tsx"),
     route("reviews/:id", "routes/authenticated/reviews/detail.tsx"),
+    route("resources", "routes/authenticated/resources/index.tsx"),
+    route("resources/:id", "routes/authenticated/resources/detail.tsx"),
     route("providers", "routes/authenticated/providers/index.tsx"),
     route("logout", "routes/authenticated/logout.tsx"),
   ]),

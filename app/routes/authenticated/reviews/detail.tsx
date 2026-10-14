@@ -729,9 +729,22 @@ const ReviewDetail = () => {
 
       {!isNew && changeLog.length > 0 && (
         <Paper variant="outlined" sx={{ p: 2.5 }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Change history
-          </Typography>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="baseline"
+          >
+            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+              Change history
+            </Typography>
+            <MuiLink
+              component={RouterLink}
+              to={`/resources/${edit.mapped_resource}`}
+              variant="body2"
+            >
+              Full history &amp; rollback →
+            </MuiLink>
+          </Stack>
           <TableContainer>
             <Table size="small">
               <TableBody>

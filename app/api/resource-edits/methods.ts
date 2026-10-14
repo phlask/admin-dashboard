@@ -4,6 +4,7 @@ import type {
   ResourceEdit,
   ResourceEditCount,
   ResourceEditQueueRow,
+  ResourceHistoryEntry,
 } from "~/types/ResourceEdit";
 import type { ResourceEntry } from "~/types/ResourceEntry";
 
@@ -41,10 +42,12 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
     },
     /** Count of PENDING edits per resource — flags resources with multiple
      * competing proposed edits. Backed by `resource_edit_counts`. */
-    getEditCounts: async () => {
-      const { data, error } = await client
-        .from("resource_edit_counts")
-        .select("*");
+    getEditCounts: async (resourceIds?: number[]) => {
+      let query = client.from("resource_edit_counts").select("*");
+      if (resourceIds) {
+        query = query.in("resource_id", resourceIds);
+      }
+      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -76,6 +79,37 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
         ResourceEdit,
         "id" | "name" | "submitted_by" | "submitted_at"
       >[];
+    },
+    /** Decided edits for one resource, newest first, including the version
+     * snapshot each approval produced. */
+    getHistoryForResource: async (resourceId: number) => {
+      const { data, error } = await table
+        .select(
+          "id, name, review_status, submitted_by, submitted_at, reviewed_by, reviewed_at, review_notes, applied_snapshot",
+        )
+        .eq("mapped_resource", resourceId)
+        .in("review_status", ["APPROVED", "REJECTED"])
+        .order("reviewed_at", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as ResourceHistoryEntry[];
+    },
+    /** Restores the resource to the version produced by an approved edit,
+     * via the `rollback_to_edit` RPC. */
+    rollback: async (editId: number, actor: string) => {
+      const { data, error } = await client
+        .rpc("rollback_to_edit", { p_edit_id: editId, p_actor: actor })
+        .single<ResourceEntry & { id: number }>();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
     },
     getChangeLogForResource: async (resourceId: number) => {
       const { data, error } = await client

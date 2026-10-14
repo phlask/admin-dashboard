@@ -17,7 +17,18 @@ export type ResourceEntryGetListParams = {
   resourceType?: ResourceType;
   /** Filter by status */
   status?: ResourceStatus;
+  /** Case-insensitive match against name or address */
+  search?: string;
 };
+
+/** PostgREST `or=(...)` filters are comma/paren delimited, `"` quotes and
+ * `*`/`%` are wildcards, so strip those from user input rather than escaping.
+ * Dots are fine inside a value ("N. Broad St"). */
+const sanitizeSearch = (value: string) =>
+  value
+    .replace(/[,()*%"\\]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const TABLE_NAME = "resources";
 
@@ -29,11 +40,14 @@ export const getResourceEntryAPI: GetModelAPI<
 
   return {
     getList: async (params) => {
-      const { limit, offset, resourceType, status } = params;
+      const { limit, offset, resourceType, status, search } = params;
       const isPaginating =
         typeof limit === "number" && typeof offset === "number";
 
-      let query = table.select("*", { count: "exact" });
+      // Stable order so pages don't overlap or skip rows.
+      let query = table
+        .select("*", { count: "exact" })
+        .order("id", { ascending: true });
 
       if (isPaginating) {
         query = query.range(offset, offset + limit - 1);
@@ -45,6 +59,11 @@ export const getResourceEntryAPI: GetModelAPI<
 
       if (status) {
         query = query.eq("status", status);
+      }
+
+      const term = search ? sanitizeSearch(search) : "";
+      if (term) {
+        query = query.or(`name.ilike.*${term}*,address.ilike.*${term}*`);
       }
 
       const { data, error, count } = await query;

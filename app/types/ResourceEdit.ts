@@ -59,3 +59,22 @@ export type ResourceChangeLogEntry = {
   reviewed_at: string | null;
   review_notes: string | null;
 };
+
+/**
+ * A decided edit on a resource's history page. `applied_snapshot` is the full
+ * resource row right after an approval (null for rejections and for edits
+ * approved before snapshots were recorded).
+ */
+export type ResourceHistoryEntry = Pick<
+  ResourceEdit,
+  | "id"
+  | "name"
+  | "review_status"
+  | "submitted_by"
+  | "submitted_at"
+  | "reviewed_by"
+  | "reviewed_at"
+  | "review_notes"
+> & {
+  applied_snapshot: (ResourceEntry & { id: number }) | null;
+};
