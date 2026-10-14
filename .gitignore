@@ -12,3 +12,7 @@
 
 # Local notes
 docs/next-up.md
+
+# Test output
+/test-results/
+/playwright-report/
