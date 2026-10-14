@@ -32,61 +32,21 @@ export const loader: LoaderFunction = async ({ request }) => {
   const { client } = getDatabaseClient(request);
   const editAPI = getResourceEditAPI(client);
 
-  // Every `resource_edits` row is either still PENDING (covered by the two
-  // queue views) or has been decided (covered by `resource_change_log`), so
-  // this trio fully reconstructs the stats below without ever scanning the
-  // full `resource_edits` table (with all its wide proposed-value columns).
-  const [pendingEdits, newResources, changeLog] = await Promise.all([
-    editAPI.getEditsQueue(),
-    editAPI.getNewResourcesQueue(),
-    editAPI.getChangeLog(),
+  const [counts, stats] = await Promise.all([
+    editAPI.getCounts(),
+    editAPI.getStats(),
   ]);
 
-  const pending = [...pendingEdits, ...newResources];
-
-  const submitterCounts = new Map<string, number>();
-  const approverCounts = new Map<string, number>();
-  const outstandingByType = new Map<string, number>();
-
-  for (const edit of pending) {
-    const submitter = edit.submitted_by || "Unknown";
-    submitterCounts.set(submitter, (submitterCounts.get(submitter) ?? 0) + 1);
-    outstandingByType.set(
-      edit.resource_type,
-      (outstandingByType.get(edit.resource_type) ?? 0) + 1,
-    );
-  }
-
-  for (const entry of changeLog) {
-    const submitter = entry.submitted_by || "Unknown";
-    submitterCounts.set(submitter, (submitterCounts.get(submitter) ?? 0) + 1);
-
-    if (entry.review_status === "APPROVED" && entry.reviewed_by) {
-      approverCounts.set(
-        entry.reviewed_by,
-        (approverCounts.get(entry.reviewed_by) ?? 0) + 1,
-      );
-    }
-  }
-
-  const topSubmitters = [...submitterCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([creator, count]) => ({ creator, count }));
-
-  const topApprovers = [...approverCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([reviewer, count]) => ({ reviewer, count }));
+  const { topSubmitters, topApprovers, pendingByType } = stats;
 
   const outstanding = RESOURCE_TYPES.map((type) => ({
     type,
-    count: outstandingByType.get(type) ?? 0,
+    count: pendingByType[type] ?? 0,
   }));
 
   return {
-    totalEdits: pending.length + changeLog.length,
-    pendingCount: pending.length,
+    totalEdits: counts.total,
+    pendingCount: counts.pending,
     topSubmitters,
     topApprovers,
     outstanding,
@@ -96,7 +56,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 type LoaderData = {
   totalEdits: number;
   pendingCount: number;
-  topSubmitters: { creator: string; count: number }[];
+  topSubmitters: { submitter: string; count: number }[];
   topApprovers: { reviewer: string; count: number }[];
   outstanding: { type: string; count: number }[];
 };
@@ -221,15 +181,15 @@ const Dashboard = () => {
           </Typography>
           {topSubmitters.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
-              No submissions yet.
+              No submitter attribution recorded yet.
             </Typography>
           ) : (
             <TableContainer>
               <Table size="small">
                 <TableBody>
-                  {topSubmitters.map(({ creator, count }) => (
-                    <TableRow key={creator}>
-                      <TableCell>{creator}</TableCell>
+                  {topSubmitters.map(({ submitter, count }) => (
+                    <TableRow key={submitter}>
+                      <TableCell>{submitter}</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 600 }}>
                         {count}
                       </TableCell>

@@ -1,3 +1,4 @@
+import Business from "@mui/icons-material/Business";
 import Dashboard from "@mui/icons-material/Dashboard";
 import Logout from "@mui/icons-material/Logout";
 import RateReview from "@mui/icons-material/RateReview";
@@ -134,6 +135,12 @@ export default function DashboardLayout() {
               <SidebarNavLink to="/reviews">
                 <RateReview fontSize="small" />
                 Reviews
+              </SidebarNavLink>
+            </li>
+            <li>
+              <SidebarNavLink to="/providers">
+                <Business fontSize="small" />
+                Providers
               </SidebarNavLink>
             </li>
           </Box>

@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
-  EditReviewStatus,
   ResourceChangeLogEntry,
   ResourceEdit,
   ResourceEditCount,
@@ -51,28 +50,17 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
         throw error;
       }
 
-      return (data ?? []) as ResourceEditCount[];
+      return (data ?? []).map((row) => ({
+        resource_id: Number(row.resource_id),
+        pending_count: Number(row.pending_count),
+      })) as ResourceEditCount[];
     },
-    /** Full history of decided (APPROVED/REJECTED) edits, most recent first
-     * within each resource. Backed by `resource_change_log`. */
-    getChangeLog: async () => {
-      const { data, error } = await client
-        .from("resource_change_log")
-        .select("*");
-
-      if (error) {
-        throw error;
-      }
-
-      return (data ?? []) as ResourceChangeLogEntry[];
-    },
-    /** Decided edit history for a single resource, e.g. for the review
-     * detail page's audit trail. Backed by `resource_change_log`. */
     getChangeLogForResource: async (resourceId: number) => {
       const { data, error } = await client
         .from("resource_change_log")
         .select("*")
-        .eq("resource_id", resourceId);
+        .eq("resource_id", resourceId)
+        .order("reviewed_at", { ascending: false });
 
       if (error) {
         throw error;
@@ -80,20 +68,70 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
 
       return (data ?? []) as ResourceChangeLogEntry[];
     },
-    getList: async (params: { review_status?: EditReviewStatus } = {}) => {
-      let query = table.select("*").order("submitted_at", { ascending: false });
 
-      if (params.review_status) {
-        query = query.eq("review_status", params.review_status);
+    /** Dashboard aggregates, computed in the DB so they aren't truncated by
+     * PostgREST's max-rows cap. Backed by the `resource_edit_*_counts` and
+     * `resource_edit_pending_by_type` views. */
+    getStats: async (limit = 5) => {
+      const [submitters, approvers, pendingByType] = await Promise.all([
+        client
+          .from("resource_edit_submitter_counts")
+          .select("submitted_by, submission_count")
+          .order("submission_count", { ascending: false })
+          .order("submitted_by", { ascending: true })
+          .limit(limit),
+        client
+          .from("resource_edit_approver_counts")
+          .select("reviewed_by, approval_count")
+          .order("approval_count", { ascending: false })
+          .order("reviewed_by", { ascending: true })
+          .limit(limit),
+        client
+          .from("resource_edit_pending_by_type")
+          .select("resource_type, pending_count"),
+      ]);
+
+      for (const result of [submitters, approvers, pendingByType]) {
+        if (result.error) {
+          throw result.error;
+        }
       }
 
-      const { data, error } = await query;
+      // count(*) is a bigint, which PostgREST may serialise as a string.
+      return {
+        topSubmitters: (submitters.data ?? []).map((row) => ({
+          submitter: row.submitted_by as string,
+          count: Number(row.submission_count),
+        })),
+        topApprovers: (approvers.data ?? []).map((row) => ({
+          reviewer: row.reviewed_by as string,
+          count: Number(row.approval_count),
+        })),
+        pendingByType: Object.fromEntries(
+          (pendingByType.data ?? []).map((row) => [
+            row.resource_type as string,
+            Number(row.pending_count),
+          ]),
+        ) as Record<string, number>,
+      };
+    },
 
-      if (error) {
-        throw error;
+    getCounts: async () => {
+      const [total, pending] = await Promise.all([
+        table.select("id", { count: "exact", head: true }),
+        table
+          .select("id", { count: "exact", head: true })
+          .eq("review_status", "PENDING"),
+      ]);
+
+      if (total.error) {
+        throw total.error;
+      }
+      if (pending.error) {
+        throw pending.error;
       }
 
-      return (data ?? []) as ResourceEdit[];
+      return { total: total.count ?? 0, pending: pending.count ?? 0 };
     },
     getById: async (id: number) => {
       const { data, error } = await table

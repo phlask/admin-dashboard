@@ -110,7 +110,7 @@ const editColumns: ColumnDef<EditRowData>[] = [
           color="warning"
         />
       ) : (
-        row.original.competingEdits || "—"
+        row.original.competingEdits
       ),
   },
   submittedColumn<EditRowData>(),
@@ -156,6 +156,7 @@ function ReviewQueueTable<T extends { id: number }>({
   const table = useReactTable({
     data,
     columns,
+    getRowId: (row) => String(row.id),
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -239,9 +240,7 @@ const ReviewsQueue = () => {
           edit.current_resource?.address ||
           `Resource #${edit.mapped_resource}`,
         submitted_at: edit.submitted_at,
-        competingEdits: edit.mapped_resource
-          ? (pendingCountByResource.get(edit.mapped_resource) ?? 1)
-          : 0,
+        competingEdits: pendingCountByResource.get(edit.mapped_resource) ?? 1,
       })),
     [edits, pendingCountByResource],
   );

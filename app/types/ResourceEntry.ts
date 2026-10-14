@@ -22,7 +22,8 @@ export type ResourceStatus =
   | "OPERATIONAL"
   | "TEMPORARILY_CLOSED"
   | "PERMANENTLY_CLOSED"
-  | "HIDDEN";
+  | "HIDDEN"
+  | "NONOPERATIONAL";
 
 /**
  * Entry permission type for a resource.
@@ -38,7 +39,7 @@ export type DispenserType =
   | "SINK"
   | "JUG"
   | "SODA_MACHINE"
-  | "PITCHER"
+  | "VESSEL"
   | "WATER_COOLER";
 
 /**
@@ -87,6 +88,7 @@ export type BathroomTag =
   | "GENDER_NEUTRAL"
   | "CHANGING_TABLE"
   | "SINGLE_OCCUPANCY"
+  | "HAS_FOUNTAIN"
   | "FAMILY";
 
 /**
@@ -155,12 +157,17 @@ export type FoodInfo = {
   food_type: FoodType[];
   /** The permitted ways to access the food. Must have at least one entry. */
   distribution_type: DistributionType[];
-  /** The type of organization providing this food. Must have at least one entry. */
-  organization_type: OrganizationType[];
+  /**
+   * The type of organization providing this food. A single value, matching
+   * phlask-map; rows predating its January 2026 schema change stored an array.
+   */
+  organization_type?: OrganizationType;
   /** If available, the name of the organization providing the resource */
   organization_name?: string;
   /** If available, a URL to more information about this food resource */
   organization_url?: string;
+  /** Free-form "helpful info" tags set by the phlask-map food form. Can be empty. */
+  tags?: string[];
 };
 
 /**
