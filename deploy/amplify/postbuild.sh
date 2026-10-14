@@ -1,5 +1,9 @@
 #!/bin/bash
+# Packages the React Router build for AWS Amplify Hosting (see amplify.yml).
+# Run from the repository root after `pnpm run build`.
 set -euo pipefail
+
+DEPLOY_DIR=deploy/amplify
 
 rm -rf .amplify-hosting
 
@@ -7,14 +11,14 @@ mkdir -p .amplify-hosting/compute/default/build
 mkdir -p .amplify-hosting/static
 
 # Server entry point and server-side build
-cp server.js .amplify-hosting/compute/default/index.js
+cp "$DEPLOY_DIR/server.js" .amplify-hosting/compute/default/index.js
 cp package.json .amplify-hosting/compute/default/package.json
 cp pnpm-lock.yaml .amplify-hosting/compute/default/pnpm-lock.yaml
 cp pnpm-workspace.yaml .amplify-hosting/compute/default/pnpm-workspace.yaml
 cp -r build/server .amplify-hosting/compute/default/build/server
 
 # Copy env vars baked in by the Amplify build phase so the runtime
-# process can load them via process.loadEnvFile (see server.js)
+# process can load them via process.loadEnvFile (see deploy/amplify/server.js)
 if [ -f .env ]; then
   cp .env .amplify-hosting/compute/default/.env
 fi
@@ -32,4 +36,4 @@ cd -
 cp -r build/client/. .amplify-hosting/static/
 
 # Amplify deployment manifest
-cp deploy-manifest.json .amplify-hosting/deploy-manifest.json
+cp "$DEPLOY_DIR/deploy-manifest.json" .amplify-hosting/deploy-manifest.json

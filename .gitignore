@@ -5,10 +5,12 @@
 # React Router
 /.react-router/
 /build/
-/docker/build/
 
 # Amplify build output
 /.amplify-hosting/
 
 # Local notes
 docs/next-up.md
+
+# Claude Code per-user settings
+.claude/settings.local.json

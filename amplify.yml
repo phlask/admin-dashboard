@@ -12,7 +12,7 @@ frontend:
         - env | grep -e SUPABASE_URL >> .env
         - env | grep -e SUPABASE_PUBLISHABLE_KEY >> .env
         - pnpm run build
-        - bash bin/postbuild.sh
+        - bash deploy/amplify/postbuild.sh
   artifacts:
     baseDirectory: .amplify-hosting
     files:

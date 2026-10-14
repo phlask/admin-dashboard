@@ -30,13 +30,13 @@ pnpm install
 
 ### Environment Variables
 
-To run the app locally, you must create a `.env` file in the root directory with the variables defined in the `.env.example` file. You should duplicate this file and populate the missing fields with the API secrets.
+To run the app locally, you must create a `.env` file in the root directory with the variables defined in the `.example.env` file. You should duplicate this file and populate the missing fields with the API secrets.
 
 ```bash
 cp .example.env .env
 ```
 
-If any variables are reported as missing, message us in the `#phlask-data` channel on Slack (See [Code For Philly](https://codeforphilly.org/) for more details). Also, refer to the `.env.example` file for more details.
+If any variables are reported as missing, message us in the `#phlask-data` channel on Slack (See [Code For Philly](https://codeforphilly.org/) for more details). Also, refer to the `.example.env` file for more details.
 
 ### Development
 
@@ -48,65 +48,61 @@ pnpm run dev
 
 Visit [http://localhost:5174](http://localhost:5174) or as output in the terminal from pnpm run dev to view the app.
 
-### Docker
+### Deployment
 
-To build and run with Docker: Have [Docker](https://docs.docker.com/get-docker/) installed and running.
+The app is deployed with [AWS Amplify Hosting](https://docs.aws.amazon.com/amplify/latest/userguide/welcome.html). `amplify.yml` runs `pnpm run build` and then `deploy/amplify/postbuild.sh`, which packages the build into `.amplify-hosting/` using the Express entry point (`deploy/amplify/server.js`) and the routing manifest (`deploy/amplify/deploy-manifest.json`).
 
-In the root directory of the project, run:
+To check a deploy bundle locally:
 
 ```bash
-docker build -t phlask-admin-dashboard .
-docker run -p 3000:3000 phlask-admin-dashboard
+pnpm run build
+bash deploy/amplify/postbuild.sh
+cd .amplify-hosting/compute/default && node index.js   # serves on PORT (default 3000)
 ```
 
-Replace 3000:3000 with the actual port your application listens on if it is different.
+### Database migrations
+
+SQL migrations for the Supabase database live in `supabase/migrations/` and are applied in filename order. Each has a matching script in `supabase/rollback/` that reverses it; rollbacks are kept out of `migrations/` so the Supabase CLI doesn't apply them.
 
 ## Project Structure
 
 ```text
 app/
 ├── api/
-│   ├── resources/
-│   │   └── methods.ts             # API methods related to resources
-│   ├── resource-revisions/
-│   │   └── methods.ts             # API methods related to resource revisions/changelogs
 │   ├── client.server.ts           # Supabase client setup (server-side)
-│   └── types.ts                   # Shared API request/response types
-├── assets/
-│   └── PHILASK_v2.svg             # Static assets (logos, images, etc.)
-├── components/
-│   ├── ThemeToggle.tsx            # Light/dark theme toggle control
-│   └── WaveDivider.tsx            # Decorative UI component
+│   ├── types.ts                   # Shared API request/response types
+│   ├── providers/methods.ts       # Providers CRUD + per-provider resource counts
+│   ├── resource-edits/methods.ts  # Review queues, approve/reject RPCs, change log
+│   └── resources/methods.ts       # Live resources table
+├── assets/                        # Static assets (logos, images, etc.)
+├── components/                    # Shared UI (ThemeToggle, WaveDivider, ...)
 ├── constants/
-│   └── db.ts                      # Database-related constants/config
+│   └── db.server.ts               # Supabase URL / key from the environment
 ├── context/
 │   └── user.ts                    # Authenticated user context
 ├── middleware/
 │   └── auth.ts                    # Route authentication middleware
 ├── routes/
 │   ├── authenticated/             # Routes that require a logged-in user
-│   │   ├── reviews/                # Review & approve/reject suggested edits
-│   │   ├── _layout.tsx
-│   │   ├── dashboard.tsx
-│   │   └── logout.tsx
-│   ├── unauthenticated/           # Public auth routes (login, password reset, etc.)
-│   │   ├── _layout.tsx
-│   │   ├── login.tsx
-│   │   ├── forgot-password.tsx
-│   │   ├── reset-password.tsx
-│   │   └── confirm.tsx
-├── schemas/
-│   └── *.ts                       # Zod schemas for auth forms
-├── theme/
-│   ├── theme.ts                   # MUI theme configuration
-│   └── ThemeModeProvider.tsx      # Light/dark theme context provider
-├── types/
-│   └── ResourceEntry.ts           # Domain-specific TypeScript types
-├── utils/
-│   └── distance.ts                # Distance calculation utilities
+│   │   ├── _layout.tsx            # Sidebar shell
+│   │   ├── dashboard.tsx          # Review stats overview
+│   │   ├── logout.tsx
+│   │   ├── providers/             # Manage resource providers
+│   │   └── reviews/               # Review queue + approve/reject/edit detail page
+│   └── unauthenticated/           # Login, forgot/reset password, email confirm
+├── schemas/                       # Zod schemas for auth forms
+├── theme/                         # MUI theme + light/dark mode (cookie-backed)
+├── types/                         # Domain types (ResourceEntry, ResourceEdit, Provider)
+├── utils/                         # Chip colours, distance helpers
 ├── app.css                        # Global application styles
 ├── root.tsx                       # App root component / Entry point
-└── routes.ts                      # Route definitions and router configuration
+└── routes.ts                      # Route definitions
+deploy/
+└── amplify/                       # AWS Amplify Hosting server, manifest and postbuild script
+docs/                              # Scoping notes, implementation log, screenshots
+supabase/
+├── migrations/                    # Forward SQL migrations (applied in order)
+└── rollback/                      # Matching down-migrations
 ```
 
 ## How to Contribute / Next Steps
