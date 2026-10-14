@@ -12,3 +12,6 @@
 
 # Local notes
 docs/next-up.md
+
+# Claude Code per-user settings
+.claude/settings.local.json
