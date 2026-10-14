@@ -407,6 +407,8 @@ const ReviewDetail = () => {
       <ResourceLocationPanel
         latitude={values.latitude}
         longitude={values.longitude}
+        currentLatitude={resource?.latitude}
+        currentLongitude={resource?.longitude}
         gpId={edit.gp_id}
         label={values.name || undefined}
       />
