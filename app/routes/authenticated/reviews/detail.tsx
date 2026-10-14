@@ -275,6 +275,58 @@ export const action: ActionFunction = async ({ request, params, context }) => {
   return redirect("/reviews", { headers });
 };
 
+/** The resource fields as the review form would write them. */
+const toPayload = (values: EditableValues): Partial<ResourceEntry> => ({
+  name: values.name || null,
+  resource_type: values.resource_type,
+  // status is NOT NULL-able in spirit (every resource has one); leave it
+  // out of the payload rather than blanking it if the field is empty.
+  ...(values.status ? { status: values.status } : {}),
+  entry_type: values.entry_type || null,
+  address: values.address || null,
+  city: values.city || null,
+  state: values.state || null,
+  zip_code: values.zip_code || null,
+  latitude: values.latitude,
+  longitude: values.longitude,
+  description: values.description || null,
+  guidelines: values.guidelines || null,
+  water: values.resource_type === "WATER" ? values.water : null,
+  food:
+    values.resource_type === "FOOD"
+      ? {
+          ...values.food,
+          organization_type: values.food.organization_type || undefined,
+          organization_name: values.food.organization_name || undefined,
+          organization_url: values.food.organization_url || undefined,
+        }
+      : null,
+  forage: values.resource_type === "FORAGE" ? values.forage : null,
+  bathroom: values.resource_type === "BATHROOM" ? values.bathroom : null,
+});
+
+/**
+ * What approving this edit would actually set: a NULL column on an edit means
+ * "leave unchanged" (see the partial-apply migration), so it shows the current
+ * value — unless the field is listed in cleared_fields.
+ */
+const effectiveProposal = (
+  edit: ResourceEdit,
+  resource: ResourceEntry | null,
+): ResourceEntry => {
+  if (!resource) {
+    return edit;
+  }
+  const cleared = new Set(edit.cleared_fields ?? []);
+  const merged: Record<string, unknown> = { ...edit };
+  for (const [key, currentValue] of Object.entries(resource)) {
+    if (key in merged && merged[key] === null && !cleared.has(key)) {
+      merged[key] = currentValue;
+    }
+  }
+  return merged as ResourceEntry;
+};
+
 /** The proposed-value inputs wrap instead of truncating (so a long address
  * reads in full next to the current one) but must stay single-line values. */
 const singleLine = (value: string) => value.replace(/\r?\n/g, " ");
@@ -386,7 +438,7 @@ const DETAILS_KEY = {
 const findChangedFields = (
   resource: ResourceEntry | null,
   currentValues: EditableValues | null,
-  edit: ResourceEdit,
+  proposal: ResourceEntry,
   proposed: EditableValues,
 ) => {
   const changed = new Set<ComparedField>();
@@ -397,9 +449,9 @@ const findChangedFields = (
   for (const field of COMPARED_FIELDS) {
     const differs =
       field === "hours"
-        ? valuesDiffer(resource.hours, edit.hours)
+        ? valuesDiffer(resource.hours, proposal.hours)
         : field === "images"
-          ? valuesDiffer(resource.images, edit.images)
+          ? valuesDiffer(resource.images, proposal.images)
           : field === "details"
             ? detailsKey !== undefined &&
               valuesDiffer(currentValues[detailsKey], proposed[detailsKey])
@@ -420,19 +472,22 @@ const ReviewDetail = () => {
   const actionData = useActionData<{ message?: string }>();
   const fetcher = useFetcher<{ message?: string; ok?: boolean }>();
 
-  const [values, setValues] = useState<EditableValues>(() =>
-    toEditableValues(edit),
+  const proposal = useMemo(
+    () => effectiveProposal(edit, resource),
+    [edit, resource],
   );
+  const savedValues = useMemo(() => toEditableValues(proposal), [proposal]);
+
+  const [values, setValues] = useState<EditableValues>(savedValues);
 
   useEffect(() => {
-    setValues(toEditableValues(edit));
-  }, [edit]);
+    setValues(savedValues);
+  }, [savedValues]);
 
   const isNew = edit.mapped_resource === null;
   const isPending = edit.review_status === "PENDING";
   const isSaving = fetcher.state !== "idle";
 
-  const savedValues = useMemo(() => toEditableValues(edit), [edit]);
   const isDirty = valuesDiffer(savedValues, values);
 
   const currentValues = useMemo(
@@ -443,14 +498,14 @@ const ReviewDetail = () => {
   const canCompare = currentValues !== null;
 
   const changedFields = useMemo(
-    () => findChangedFields(resource, currentValues, edit, values),
-    [resource, currentValues, edit, values],
+    () => findChangedFields(resource, currentValues, proposal, values),
+    [resource, currentValues, proposal, values],
   );
   // Rows the submitter changed stay listed even if the reviewer edits them
   // back to the current value, so a row never vanishes mid-typing.
   const submittedChanges = useMemo(
-    () => findChangedFields(resource, currentValues, edit, savedValues),
-    [resource, currentValues, edit, savedValues],
+    () => findChangedFields(resource, currentValues, proposal, savedValues),
+    [resource, currentValues, proposal, savedValues],
   );
 
   const [showChangedOnly, setShowChangedOnly] = useState(true);
@@ -499,34 +554,25 @@ const ReviewDetail = () => {
     // semantics (Enter-to-submit, pending state, progressive enhancement).
     event.preventDefault();
 
-    const payload: Partial<ResourceEntry> = {
-      name: values.name || null,
-      resource_type: values.resource_type,
-      // status is NOT NULL-able in spirit (every resource has one); leave it
-      // out of the payload rather than blanking it if the field is empty.
-      ...(values.status ? { status: values.status } : {}),
-      entry_type: values.entry_type || null,
-      address: values.address || null,
-      city: values.city || null,
-      state: values.state || null,
-      zip_code: values.zip_code || null,
-      latitude: values.latitude,
-      longitude: values.longitude,
-      description: values.description || null,
-      guidelines: values.guidelines || null,
-      water: values.resource_type === "WATER" ? values.water : null,
-      food:
-        values.resource_type === "FOOD"
-          ? {
-              ...values.food,
-              organization_type: values.food.organization_type || undefined,
-              organization_name: values.food.organization_name || undefined,
-              organization_url: values.food.organization_url || undefined,
-            }
-          : null,
-      forage: values.resource_type === "FORAGE" ? values.forage : null,
-      bathroom: values.resource_type === "BATHROOM" ? values.bathroom : null,
-    };
+    // Send only what the reviewer changed: a NULL column means "no change"
+    // to approve_edit, so a sparse edit can't freeze stale snapshot values
+    // over newer data. Fields emptied on purpose go in cleared_fields.
+    const before = toPayload(savedValues);
+    const after = toPayload(values);
+    const changes: Record<string, unknown> = {};
+    const cleared = new Set(edit.cleared_fields ?? []);
+    for (const key of Object.keys(after) as (keyof ResourceEntry)[]) {
+      if (!valuesDiffer(before[key], after[key])) {
+        continue;
+      }
+      changes[key] = after[key];
+      if (after[key] === null) {
+        cleared.add(key);
+      } else {
+        cleared.delete(key);
+      }
+    }
+    const payload = { ...changes, cleared_fields: [...cleared] };
 
     // biome-ignore lint/suspicious/noExplicitAny: react-router's JsonValue submit-target type isn't exported to cast against
     fetcher.submit({ intent: "save", values: payload } as any, {
@@ -905,7 +951,7 @@ const ReviewDetail = () => {
               current={formatValue(resource?.hours)}
               {...rowState("hours")}
             >
-              {formatValue(edit.hours)}
+              {formatValue(proposal.hours)}
             </FieldRow>
 
             <FieldRow
@@ -913,7 +959,7 @@ const ReviewDetail = () => {
               current={formatValue(resource?.images)}
               {...rowState("images")}
             >
-              {formatValue(edit.images)}
+              {formatValue(proposal.images)}
             </FieldRow>
           </TableBody>
         </Table>
@@ -1114,6 +1160,7 @@ const ReviewDetail = () => {
             <Button
               type="submit"
               variant="outlined"
+              disabled={!isDirty}
               loading={isSaving}
               loadingPosition="start"
             >

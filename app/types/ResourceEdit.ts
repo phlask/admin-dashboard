@@ -25,6 +25,9 @@ export type ResourceEdit = ResourceEntry & {
   reviewed_by: string | null;
   reviewed_at: string | null;
   review_notes: string | null;
+  /** Mirrored fields this edit deliberately sets to NULL on approval. A NULL
+   * field that isn't listed here means "leave the current value unchanged". */
+  cleared_fields: string[];
 };
 
 export type ResourceEditQueueRow = ResourceEdit & {
