@@ -5,8 +5,14 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControlLabel,
   MenuItem,
+  Link as MuiLink,
   Paper,
   Stack,
   Switch,
@@ -199,6 +205,14 @@ const toEditableValues = (edit: ResourceEntry): EditableValues => ({
   },
 });
 
+type CompetingEdit = Pick<
+  ResourceEdit,
+  "id" | "name" | "submitted_by" | "submitted_at"
+>;
+
+/** Long enough for a real reason, short enough to stay a note. */
+const MAX_REVIEW_NOTES = 1000;
+
 export const loader: LoaderFunction = async ({ request, params }) => {
   const id = Number(params.id);
   if (!Number.isInteger(id)) {
@@ -211,16 +225,22 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   let resource: ResourceEntry | null = null;
   let changeLog: ResourceChangeLogEntry[] = [];
+  let competingEdits: CompetingEdit[] = [];
   if (edit.mapped_resource !== null) {
     const resourceAPI = getResourceEntryAPI(client);
 
-    [resource, changeLog] = await Promise.all([
+    [resource, changeLog, competingEdits] = await Promise.all([
       resourceAPI.getById(edit.mapped_resource).catch(() => null),
       editAPI.getChangeLogForResource(edit.mapped_resource).catch(() => []),
+      edit.review_status === "PENDING"
+        ? editAPI
+            .getOtherPendingForResource(edit.mapped_resource, edit.id)
+            .catch(() => [])
+        : Promise.resolve([]),
     ]);
   }
 
-  return { edit, resource, changeLog };
+  return { edit, resource, changeLog, competingEdits };
 };
 
 export const action: ActionFunction = async ({ request, params, context }) => {
@@ -260,7 +280,10 @@ export const action: ActionFunction = async ({ request, params, context }) => {
     if (intent === "approve") {
       await editAPI.approve(id, reviewer);
     } else {
-      await editAPI.reject(id, reviewer);
+      const notes = String(formData.get("notes") ?? "")
+        .trim()
+        .slice(0, MAX_REVIEW_NOTES);
+      await editAPI.reject(id, reviewer, notes || undefined);
     }
   } catch (error) {
     return data(
@@ -464,11 +487,13 @@ const findChangedFields = (
 };
 
 const ReviewDetail = () => {
-  const { edit, resource, changeLog } = useLoaderData<{
+  const { edit, resource, changeLog, competingEdits } = useLoaderData<{
     edit: ResourceEdit;
     resource: ResourceEntry | null;
     changeLog: ResourceChangeLogEntry[];
+    competingEdits: CompetingEdit[];
   }>();
+  const [rejectOpen, setRejectOpen] = useState(false);
   const actionData = useActionData<{ message?: string }>();
   const fetcher = useFetcher<{ message?: string; ok?: boolean }>();
 
@@ -631,6 +656,53 @@ const ReviewDetail = () => {
           </Typography>
         </Stack>
       </Box>
+
+      {edit.review_status !== "PENDING" && (
+        <Alert
+          severity={edit.review_status === "APPROVED" ? "success" : "error"}
+        >
+          {edit.review_status === "APPROVED" ? "Approved" : "Rejected"}
+          {edit.reviewed_by ? ` by ${edit.reviewed_by}` : ""}
+          {edit.reviewed_at
+            ? ` on ${new Date(edit.reviewed_at).toLocaleString(undefined, {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}`
+            : ""}
+          .{edit.review_notes ? ` Reason: ${edit.review_notes}` : ""}
+        </Alert>
+      )}
+
+      {competingEdits.length > 0 && (
+        <Alert severity="warning">
+          {competingEdits.length === 1
+            ? "Another pending edit targets"
+            : `${competingEdits.length} other pending edits target`}{" "}
+          this resource. Each edit is reviewed on its own, so approving one does
+          not resolve the others — check them before deciding:
+          <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2.5 }}>
+            {competingEdits.map((other) => (
+              <li key={other.id}>
+                <MuiLink
+                  component={RouterLink}
+                  to={`/reviews/${other.id}`}
+                  color="inherit"
+                  fontWeight={600}
+                >
+                  #{other.id}
+                  {other.name ? ` — ${other.name}` : ""}
+                </MuiLink>{" "}
+                ({other.submitted_by ?? "anonymous"},{" "}
+                {new Date(other.submitted_at).toLocaleString(undefined, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+                )
+              </li>
+            ))}
+          </Box>
+        </Alert>
+      )}
 
       {isNew && (
         <Alert severity="info">
@@ -1181,11 +1253,10 @@ const ReviewDetail = () => {
                 Approve
               </Button>
               <Button
-                type="submit"
-                name="intent"
-                value="reject"
+                type="button"
                 variant="outlined"
                 color="error"
+                onClick={() => setRejectOpen(true)}
               >
                 Reject
               </Button>
@@ -1193,6 +1264,46 @@ const ReviewDetail = () => {
           </Form>
         </Stack>
       )}
+
+      <Dialog
+        open={rejectOpen}
+        onClose={() => setRejectOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <Form method="post" onSubmit={() => setRejectOpen(false)}>
+          <DialogTitle>Reject this edit?</DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ mb: 2 }}>
+              The live resource is left unchanged. The reason is kept with the
+              edit in the change history.
+            </DialogContentText>
+            <TextField
+              name="notes"
+              label="Reason (optional)"
+              fullWidth
+              multiline
+              minRows={3}
+              autoFocus
+              slotProps={{ htmlInput: { maxLength: MAX_REVIEW_NOTES } }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button type="button" onClick={() => setRejectOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              name="intent"
+              value="reject"
+              variant="contained"
+              color="error"
+            >
+              Reject edit
+            </Button>
+          </DialogActions>
+        </Form>
+      </Dialog>
     </Stack>
   );
 };

@@ -55,6 +55,28 @@ export const getResourceEditAPI = (client: SupabaseClient) => {
         pending_count: Number(row.pending_count),
       })) as ResourceEditCount[];
     },
+    /** Other PENDING edits targeting the same resource — competing
+     * proposals the reviewer should see before approving this one. */
+    getOtherPendingForResource: async (
+      resourceId: number,
+      exceptId: number,
+    ) => {
+      const { data, error } = await table
+        .select("id, name, submitted_by, submitted_at")
+        .eq("mapped_resource", resourceId)
+        .eq("review_status", "PENDING")
+        .neq("id", exceptId)
+        .order("submitted_at", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as Pick<
+        ResourceEdit,
+        "id" | "name" | "submitted_by" | "submitted_at"
+      >[];
+    },
     getChangeLogForResource: async (resourceId: number) => {
       const { data, error } = await client
         .from("resource_change_log")
