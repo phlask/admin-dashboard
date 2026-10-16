@@ -10,6 +10,14 @@ returns jsonb language sql immutable as $$
     - 'submitted_at' - 'reviewed_by' - 'reviewed_at' - 'review_notes';
 $$;
 
+create or replace view public.resource_edit_pending_by_type
+  with (security_invoker = true)
+  as
+    select resource_type, count(*) as pending_count
+    from public.resource_edits
+    where review_status = 'PENDING'
+    group by resource_type;
+
 drop view if exists public.resource_edits_queue;
 drop view if exists public.new_resources_queue;
 
