@@ -23,6 +23,15 @@ test("queue splits new sites from edits and flags duplicates", async ({
     .locator("xpath=..")
     .locator("table");
   await expect(edits.getByText("Grace Cafe (Broad St)")).toBeVisible();
+  // A name-only edit leaves resource_type NULL; the resource's type is shown.
+  await expect(edits.getByText("WATER")).toBeVisible();
+});
+
+test("dashboard counts sparse edits under their resource's type", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator("tr", { hasText: "WATER" })).toContainText("2");
 });
 
 test("shows only the fields an edit changes", async ({ page }) => {
