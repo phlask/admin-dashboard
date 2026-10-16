@@ -128,7 +128,7 @@ const seed = () => {
     latitude: 39.95412,
     longitude: -75.16288,
   });
-  return { resources, edits };
+  return { resources, edits, audit: [] };
 };
 
 let state = seed();
@@ -254,6 +254,31 @@ const respondRows = (req, res, rows, params) => {
 
 const MIRRORED = Object.keys(baseResource).filter((key) => key !== "id");
 
+/** Mirrors the audit_log triggers so the Audit log page has something to
+ * show after you approve, reject, roll back or save in the UI. */
+const audit = (action, tableName, before, after) => {
+  const changed =
+    before && after
+      ? Object.keys(after).filter(
+          (key) =>
+            key !== "applied_snapshot" &&
+            JSON.stringify(before[key]) !== JSON.stringify(after[key]),
+        )
+      : [];
+  state.audit.push({
+    id: state.audit.length + 1,
+    occurred_at: new Date().toISOString(),
+    actor: user.email,
+    actor_id: user.id,
+    action,
+    table_name: tableName,
+    record_id: String((after ?? before).id),
+    changed_fields: changed,
+    old_data: before,
+    new_data: after,
+  });
+};
+
 const applyEdit = (edit) => {
   const target = state.resources.get(edit.mapped_resource);
   for (const key of MIRRORED) {
@@ -269,6 +294,10 @@ const applyEdit = (edit) => {
 const rpc = (name, args) => {
   const edit = state.edits.get(Number(args.p_edit_id));
   if (!edit) return [400, { message: `edit ${args.p_edit_id} not found` }];
+  const editBefore = { ...edit };
+  const resourceBefore = edit.mapped_resource
+    ? { ...state.resources.get(edit.mapped_resource) }
+    : null;
   if (name === "approve_edit") {
     if (edit.review_status !== "PENDING")
       return [400, { message: "not PENDING" }];
@@ -287,6 +316,10 @@ const rpc = (name, args) => {
       reviewed_at: new Date().toISOString(),
       applied_snapshot: { ...resource },
     });
+    audit(resourceBefore ? "UPDATE" : "INSERT", "resources", resourceBefore, {
+      ...resource,
+    });
+    audit("APPROVE", "resource_edits", editBefore, { ...edit });
     return [200, resource];
   }
   if (name === "reject_edit") {
@@ -298,6 +331,7 @@ const rpc = (name, args) => {
       reviewed_at: new Date().toISOString(),
       review_notes: args.p_notes,
     });
+    audit("REJECT", "resource_edits", editBefore, { ...edit });
     return [200, edit];
   }
   if (name === "rollback_to_edit") {
@@ -308,6 +342,7 @@ const rpc = (name, args) => {
       id: target.id,
       last_modified: new Date().toISOString(),
     });
+    audit("ROLLBACK", "resources", resourceBefore, { ...target });
     return [200, target];
   }
   return [404, { message: `unknown rpc ${name}` }];
@@ -364,7 +399,7 @@ const views = () => {
         pending_count: n,
       }),
     ),
-    audit_log: [],
+    audit_log: state.audit,
     providers: [],
     resource_provider_counts: [],
   };
@@ -433,7 +468,11 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "PATCH" && table === "resource_edits") {
     const changes = JSON.parse(body);
     const matched = applyFilters(all, url.searchParams);
-    for (const row of matched) Object.assign(row, changes);
+    for (const row of matched) {
+      const before = { ...row };
+      Object.assign(row, changes);
+      audit("UPDATE", "resource_edits", before, { ...row });
+    }
     return respondRows(req, res, matched, new URLSearchParams());
   }
 
