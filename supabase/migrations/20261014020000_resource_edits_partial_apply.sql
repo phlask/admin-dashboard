@@ -54,6 +54,18 @@ revoke all on public.new_resources_queue  from anon;
 grant select on public.resource_edits_queue to authenticated;
 grant select on public.new_resources_queue  to authenticated;
 
+-- A sparse edit to an existing resource may leave resource_type NULL ("no
+-- change"); count it under the type of the resource it targets.
+create or replace view public.resource_edit_pending_by_type
+  with (security_invoker = true)
+  as
+    select coalesce(e.resource_type, r.resource_type) as resource_type,
+           count(*) as pending_count
+    from public.resource_edits e
+    left join public.resources r on r.id = e.mapped_resource
+    where e.review_status = 'PENDING'
+    group by coalesce(e.resource_type, r.resource_type);
+
 create or replace function public._edit_payload(e public.resource_edits)
 returns jsonb language sql immutable as $$
   with mirrored as (
