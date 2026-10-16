@@ -298,8 +298,11 @@ const ReviewsQueue = () => {
     () =>
       edits.map((edit) => ({
         id: edit.id,
-        name: edit.name ?? null,
-        resource_type: edit.resource_type,
+        // A NULL field on an edit means "no change", so fall back to the
+        // resource's current value.
+        name: edit.name ?? edit.current_resource?.name ?? null,
+        resource_type:
+          edit.resource_type ?? edit.current_resource?.resource_type,
         resourceLabel:
           edit.current_resource?.name ||
           edit.current_resource?.address ||
