@@ -393,12 +393,18 @@ const views = () => {
       edits.filter((e) => e.review_status === "APPROVED"),
       "reviewed_by",
     ).map(([who, n]) => ({ reviewed_by: who, approval_count: n })),
-    resource_edit_pending_by_type: count(pending, "resource_type").map(
-      ([type, n]) => ({
-        resource_type: type,
-        pending_count: n,
-      }),
-    ),
+    // Sparse edits count under their target resource's type, like the view.
+    resource_edit_pending_by_type: count(
+      pending.map((e) => ({
+        resource_type:
+          e.resource_type ??
+          state.resources.get(e.mapped_resource)?.resource_type,
+      })),
+      "resource_type",
+    ).map(([type, n]) => ({
+      resource_type: type,
+      pending_count: n,
+    })),
     audit_log: state.audit,
     providers: [],
     resource_provider_counts: [],
