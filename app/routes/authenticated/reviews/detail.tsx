@@ -393,6 +393,7 @@ const ReviewDetail = () => {
               <TableCell component="th">Field</TableCell>
               <TableCell component="th">Current</TableCell>
               <TableCell component="th">Proposed</TableCell>
+              <TableCell component="th"></TableCell>
             </TableRow>
 
             <TableRow>
@@ -406,6 +407,9 @@ const ReviewDetail = () => {
                   disabled={!isPending}
                   onChange={(e) => setField("name", e.target.value)}
                 />
+              </TableCell>
+              <TableCell>
+                {values.name !== resource?.name ? "⬅️ changed" : ""}{" "}
               </TableCell>
             </TableRow>
 
@@ -432,6 +436,11 @@ const ReviewDetail = () => {
                   ))}
                 </TextField>
               </TableCell>
+              <TableCell>
+                {values.resource_type !== resource?.resource_type
+                  ? "⬅️ changed"
+                  : ""}{" "}
+              </TableCell>
             </TableRow>
 
             <TableRow>
@@ -455,6 +464,11 @@ const ReviewDetail = () => {
                   ))}
                 </TextField>
               </TableCell>
+              <TableCell>
+                {values.entry_type !== resource?.entry_type
+                  ? "⬅️ changed"
+                  : ""}{" "}
+              </TableCell>
             </TableRow>
 
             <TableRow>
@@ -472,6 +486,11 @@ const ReviewDetail = () => {
                   disabled={!isPending}
                   onChange={(e) => setField("description", e.target.value)}
                 />
+              </TableCell>
+              <TableCell>
+                {values.description !== resource?.description
+                  ? "⬅️ changed"
+                  : ""}{" "}
               </TableCell>
             </TableRow>
 
@@ -503,6 +522,9 @@ const ReviewDetail = () => {
                   onChange={(e) => setField("address", e.target.value)}
                 />
               </TableCell>
+              <TableCell>
+                {values.address !== resource?.address ? "⬅️ changed" : ""}{" "}
+              </TableCell>
             </TableRow>
 
             <TableRow>
@@ -516,6 +538,9 @@ const ReviewDetail = () => {
                   disabled={!isPending}
                   onChange={(e) => setField("city", e.target.value)}
                 />
+              </TableCell>
+              <TableCell>
+                {values.city !== resource?.city ? "⬅️ changed" : ""}{" "}
               </TableCell>
             </TableRow>
 
@@ -531,6 +556,9 @@ const ReviewDetail = () => {
                   onChange={(e) => setField("state", e.target.value)}
                 />
               </TableCell>
+              <TableCell>
+                {values.state !== resource?.state ? "⬅️ changed" : ""}{" "}
+              </TableCell>
             </TableRow>
 
             <TableRow>
@@ -544,6 +572,9 @@ const ReviewDetail = () => {
                   disabled={!isPending}
                   onChange={(e) => setField("zip_code", e.target.value)}
                 />
+              </TableCell>
+              <TableCell>
+                {values.zip_code !== resource?.zip_code ? "⬅️ changed" : ""}{" "}
               </TableCell>
             </TableRow>
 
@@ -559,6 +590,9 @@ const ReviewDetail = () => {
                   disabled={!isPending}
                   onChange={(e) => setField("latitude", Number(e.target.value))}
                 />
+              </TableCell>
+              <TableCell>
+                {values.latitude !== resource?.latitude ? "⬅️ changed" : ""}{" "}
               </TableCell>
             </TableRow>
 
@@ -576,6 +610,11 @@ const ReviewDetail = () => {
                     setField("longitude", Number(e.target.value))
                   }
                 />
+              </TableCell>
+              <TableCell>
+                {values.longitude !== resource?.longitude
+                  ? "⬅️ changed"
+                  : ""}{" "}
               </TableCell>
             </TableRow>
 
